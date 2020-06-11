@@ -14,7 +14,7 @@ We show how to generate the FPGA bitfile, then we show how to build our
 [standard simpleserial AES victim
 firmware](https://github.com/newaetech/chipwhisperer/tree/develop/hardware/victims/firmware/simpleserial-aes) and run our standard Jupyter tutorials.
 
-The end result is a powerful side-channel plaform with a customizable Arm
+The end result is a powerful side-channel platform with a customizable Arm
 Cortex target, which you can use as a starting point and customize for your
 own needs. Here are a few examples of what you can do:
 
@@ -168,7 +168,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - `dip_switches_4bits`
         - `push_button_4bits`
         - `qspi_flash`
-        - `DPAlink
+        - `DAPlink`
     - connect the dangling `usb_uart` port to the `axi_uartlite_0` block
 
     - Add AXI GPIO block:
@@ -198,7 +198,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - click OK  
         ![picture](images/axi_uartlite.png)
 
-    - Expand the `Clocks_and_Resets` block by clicking on its + sign
+    - Double-click the `Clocks_and_Resets` block:
         - double-click the `clk_wiz_0` block to edit its configuration; go to
           the Output Clocks tab:
             - disable clk_out2
@@ -208,8 +208,8 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
               frequency)
             - click OK
         - delete the `proc_sys_reset_DAPlink`, `i_interconnect_aresetn`,
-          `i_peripheral_aresetn`, and `i_sysresetn_or` blocks
-        - delete the dangling `clk_qspi` port
+          `i_peripheral_aresetn1`, and `i_sysresetn_or` blocks
+        - delete the dangling `clk_qspi` and `aux_reset_in` ports
         - connect the `mb_reset` output of `proc_sys_reset_base` to the
           input of `i_inv_dbgresetn` and to the input of `i_in_sysresetn1`
         - connect the `interconnect_aresetn` output of `proc_sys_reset_base`
@@ -226,13 +226,14 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - the `Clocks_and_Resets` block diagram should now look like this:
         ![picture](images/clocks_and_resets.png)
 
-    - Right-click in the design window, Create Port, and fill in these properties:
+    - Returning to the main block diagram, right-click in the design window,
+      Create Port, and fill in these properties:
         - name: `ext_clock`
         - direction: output
         - type: clock
         - click OK
-        - wire the newly-created `ext_clock` to the `clk_cpu` net  
-        ![picture](images/ext_clk.png)
+        - wire the newly-created `ext_clock` to the `clk_cpu` net
+          ![picture](images/ext_clk.png)
 
     - Repeat the above to create an output data pin named `locked`,
       connected to the `locked` output of `Clocks_and_Resets`
@@ -241,21 +242,14 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
       connected to the `sysresetn` output of `Clocks_and_Resets`
 
     - Delete the `tri_io_buf_0` block
+        - delete the dangling `TDO[0:0]` output port
         - for each of the following `Cortex_M3_0` outputs, right-click on
           the output pin, select Create Port, and accept the defaults:
-                - `TDO`
-                - `nTDOEN`
-                - `SWV`
+            - `TDO`
+            - `nTDOEN`
+            - `SWV`
 
     - Add many more missing ports:
-        - right-click in the design window, Create Port, and fill in these properties:
-            - name: `SWO`
-            - direction: output
-            - type: data
-            - click OK
-            - wire the newly-created `SWO` port to the `TDO` output of the
-              `Cortex_M3_0` block
-
         - right-click on the `SWDITMS` input of the `Cortex_M3_0` block and
           select "Create Port"
             - change name to `SWDI`, set type to data
@@ -276,9 +270,8 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
           the `Cortex_M3_0` block:
             - select the port, then right-click in the design window, select
               "Create Port", and accept  the default pre-filled values
-        - do the same for `aux_reset_in` port of the `Clocks_and_Resets`
-          block
 
+    - Delete the `xlconcat_1` block
         - right-click the CFGITCMEN[1:0] input of the `Cortex_M3_0` block
           and select "Create Port"; accept pre-filled settings and click
           "OK"
@@ -291,7 +284,6 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
           times
             - this will create the blocks `xlconstant_2` through to
               `xlconstant_7`
-        - delete the `xlconcat_1` block
         - connect the `dout` port of each of our seven `xlconstant_*` blocks
           to an unconnected `In*` port of the `xlconcat_0` block
         - you should have something that looks like this:  
@@ -314,8 +306,8 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - File -> Save Block Design
         - Tools -> Validate Design
         - If you get a "Validation successful" message: congratulation!
-          You've completed the hardest part of the porting exercise!
-          Otherwise, any errors need to be investigated and resolved.
+          You've completed the most tedious part of the porting exercise!
+          Otherwise, any errors **must be** investigated and resolved.
         ![picture](images/success.png)
 
 7. Change the target from Arty to CW305:
@@ -324,8 +316,8 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     - upgrade IP blocks as required: next to the message "The design has 23
       blocks that should be upgraded.", click on "Report IP Status", then
       "upgrade selected"
-    - you will likely get warned of critical messages for possible issues
-      with `clk_wiz` and `proc_sys_reset_base` blocks.
+    - you will see three critical warnings related to the `clk_wiz` and
+      `proc_sys_reset_base` blocks
         - open the `proc_sys_reset_base` block (inside the
           `Clocks_and_Resets` block) and fix its configuration:
             - set Ext Reset Active Width to 1
@@ -337,17 +329,18 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 8. Replace the top-level design file:
     - File > Add Sources > Add or create design sources > Next;
         - Add Files, select 
-          [`CW305_designstart_top.v`](src/hdl/CW305_designstart_top.v)
+          [`CW305_designstart_top.v`](src/hardware/CW305_designstart_top.v)
         - select "Copy sources into project"; Finish
     - in the Sources tree, right-click on `CW305_designstart_top.v` and select
       "Set As Top"
     - right-click on the old top-level file, `m3_for_arty_a7_wrapper`, and
       select Remove File from Project
+    - also remove `tri_io_buf` from the project
 
 9. Replace the constraint file:
     - File > Add Sources > Add or create constraints > Next;
         - Add Files, select
-          [`CW305_designstart.xdc`](src/constraints/CW305_designstart.xdc)
+          [`CW305_designstart.xdc`](src/hardware/CW305_designstart.xdc)
         - ensure "Copy constraints files into project" is selected; Finish
     - in the Sources tree, expand Constraints and constrs\_1, right-click
       `CW305_designstart.xdc`, select "Set as Target Constraint File"
@@ -362,6 +355,13 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     MHz to something more reasonable. We'll be setting the actual clock to
     something much lower, so that's ok.
 
+    *It's possible that a "route\_design ERROR" will occur. The runme.log
+    file in the implementation directory would show no errors, and
+    hs\_err\_pidXXXXX.log would show: "An unexpected error has occurred
+    (EXCEPTION\_ACCESS\_VIOLATION)". In this case, try to generate the
+    bistream again (and again?) until it completes successfully. Thanks
+    Vivado :-)*
+
 
 11. File > Export > Export Hardware, to `V:/software`
 
@@ -372,8 +372,9 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     - set exported location to `V:/software/`
     - set workspace to `V:/software/CW305_DesignStart/sdk_workspace/`
 
-2. In the Xilinx SDK tool, select File > New > Board Support Package and
-   click Finish
+2. In the Xilinx SDK tool, select File > New > Board Support Package. Ensure
+   that `CW305_designstart_top_hw_platform_0` is selected in the Hardware
+   Platform dropdown; click Finish.
     - In the BSP Setting pop-up, change the OS version to 6.7.
     - Under "Overview", click on standalone.
     - Even though stdin and stdout are both correctly set to
@@ -406,6 +407,8 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
       `copy bram_a7.* ..\..\..\hardware\CW305_DesignStart\`
     - delete this last line:
       `copy qspi_a7.hex ..\..\..\hardware\m3_for_arty_a7\testbench`
+    - change all instances of `m3_for_arty_a7.axf` to
+      `CW305_DesignStart.axf`
 
 2. Copy the following files from
   `V:\hardware\m3_for_arty_a7\m3_for_arty_a7\` to `V:\hardware\CW305_DesignStart\`:  
@@ -452,7 +455,7 @@ so that their contents may be updated. First we must generate this MMI file:
    navigate to project directory and run: `source make_mmi_file.tcl`
 
 
-# Compile sofware
+# Compile software
 1. Open the project file (`CW305_DesignStart.uvprojx`) in Keil and select
    Project > Rebuild all target files
 
@@ -460,11 +463,17 @@ so that their contents may be updated. First we must generate this MMI file:
    `xil_assert.h` having "*last line of file ends without a newline*";
    consider fixing this to have a clean build.
 
+3. Note that `make_hex_a7.bat` is automatically run post-build, and any
+   errors in that script will *not* be captured in the final tally of errors
+   and warnings, so look at the build output carefully to make sure that it
+   did in fact run cleanly.
+
 
 # Update FPGA bitfile
-Run the `make_prog_files.bat` script to stitch the Cortex program data into
-the FPGA bitfile that we generated previously. This is orders of magnitude
-faster than re-generating a bitfile from scratch.
+In `v:/hardware/CW305_DesignStart`, run the `make_prog_files.bat` script to
+stitch the Cortex program data into the FPGA bitfile that we generated
+previously. This should take less than a minute -- orders of magnitude
+faster than re-generating a bitfile from scratch!
 
 **Caution!** This can silently fail if the MMI file has not been updated.
 There will be no indication of any errors, other than an unresponsive target
@@ -475,7 +484,8 @@ processor.
 Now you can have fun! One thing you can do is try some of the ChipWhisperer
 tutorials. Since we have built a target which looks and feels like an STM32
 target (as far as the ChipWhisperer capture hardware is concerned), any of
-the tutorials which support the CWLITEARM platform should work.
+the tutorials which support the CWLITEARM platform should work (if not, read
+on to [debugging](#debugging) below).
 
 Simply skip over the initial part of the tutorials which deals with
 programming the target. Do not run the `%run
@@ -510,23 +520,38 @@ Finally, update the FPGA bitfile with the `make_prog_files.bat` script.
 
 
 # Debugging
-The  three LEDs located above the SMA connectors on the bottom of the CW305
+The three LEDs located above the SMA connectors on the bottom of the CW305
 provide some limited visibility into the target status:
 - Red LED (LED7): Cortex clock, should be periodically toggling. If it's
-  constantly on or off, then the Cortex has no clock.
+  constantly on or off, then the Cortex has no clock. The clock is generated
+  on the CW305 itself. Check your modifications to the `Clocks_and_Resets`
+  block.
 - Green LED (LED5): Cortex reset signal, should be off.
-  If it's on, then the Cortex reset signal hasn't been released.
-- Blue LED (LED6): UART activity. Should see fast
-  bursts of activity whenever there is UART traffic.
+  If it's on, then the Cortex reset signal hasn't been released. Again,
+  check your modifications to the `Clocks_and_Resets` block.
+- Blue LED (LED6): UART activity. Should see fast bursts of activity
+  whenever there is UART traffic. Check your modifications to the
+  `axi_uartlite_0` block. Inactivity can also be caused by mistakes in the
+  bitfile update flow.
 
 If you get clean FPGA and software builds but yet the target isn't
 responding, here is a list of possible causes:
 - Did you [update the MMI file?](#update-mmi-file)
+- There are a number of scripts which move the executable generated by Keil
+  towards its final destination in the FPGA bitfile; make sure these all ran
+  cleanly:
+     - Keil build outputs are in `v:/software/CW305_DesignStart/Build_Keil/objects`
+     - the `make_hex_a7.bat` script creates `bram_a7.elf` and `bram_a7.hex`
+       in `v:/software/CW305_DesignStart/Build_Keil` and in
+       `v:/hardware/CW305_designstart`
+     - the `make_prog_files.bat` script creates the final bitfile:
+       `v:/hardware/CW305_DesignStart/CW305_DesignStart.bit`
 - If the CFGITCMEN[1:0] inputs aren't properly assigned, the processor will
   attempt to fetch the program from the wrong place.
 - If the modifications to the `Clocks_and_Resets` blocks weren't done
   properly, clocks and resets may not be getting propagated correctly. Note
-  that there are several internal resets.
+  that there are several internal resets, not just the one which is routed
+  to LED5
 
 If you're still stuck, try simulation, ILAs, or routing internal signals to
 the JP3 header. Simulation is probably the right choice, unless you enjoy
@@ -543,5 +568,3 @@ SWD signals which have been routed to the JP3 header (refer to the
 Debugging has been successfully tested using a Segger J-link Plus, using
 either the JTAG or SWD interface, with speed set to "auto".
 
-
-(TODO: spellcheck)
