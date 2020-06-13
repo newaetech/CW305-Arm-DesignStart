@@ -500,6 +500,20 @@ The following tutorials have been verified to succeed:
   settings
 
 
+## CW305 switches
+The SW4 push-button is connected to the M3 reset; it can be used to reset
+the running program.
+
+The J16 DIP-switch selects the M3 input clock:
+- 0: the input clock is the CW305 PLL1
+- 1: the input clock is the HS2 pin (e.g. clkgen from ChipWhisperer)
+
+The `Setup_DesignStart.ipynb` notebook expects J16 to be set to 0.
+
+Refer to the [CW305
+documentation](https://newaetech.github.io/documentation-master/Targets/CW305%20Artix%20FPGA/)
+for more information on the features and capabilities of the CW305 board.
+
 
 # Next steps
 
