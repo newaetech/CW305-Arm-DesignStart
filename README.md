@@ -20,7 +20,8 @@ own needs. Here are a few examples of what you can do:
 
 - add additional peripherals and interfaces to the Arm processor
 - instantiate multiple Arm processors
-- add additional side-channel attack logic to the CW305 FPGA
+- add additional side-channel attack logic to the CW305 FPGA -- for example,
+  [Arm trace sniffing logic](https://github.com/newaetech/DesignStartTrace).
 
 Before starting, it's a good idea to watch the series of videos that Arm put
 together to show the development cycle for DesignStart on the Arty board:
