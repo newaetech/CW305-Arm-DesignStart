@@ -151,7 +151,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
       port in Vivado. (You, on the other hand, may wish to do so --
       especially if you decide to deviate from this recipe.)
 
-6. In Vivado, update the block diagram. There is a *very long* list of
+6. Restart Vivado. Then in Vivado, update the block diagram. There is a *very long* list of
    changes to make! At the end of the changes, we'll show a picture of what
    the updated block diagram should look like, so that you can double-check
    that you've made all the changes correctly.
@@ -162,14 +162,14 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - `axi_gpio_0`
         - `axi_gpio_1`
         - `axi_quad_spi_0`
-        - `DAPlink`
+        - `daplink_if_0`
     - delete the following ports which are now dangling:
         - `rgb_led`
         - `led_4bits`
         - `dip_switches_4bits`
         - `push_button_4bits`
         - `qspi_flash`
-        - `DAPlink`
+        - `DAPLink`
     - connect the dangling `usb_uart` port to the `axi_uartlite_0` block
 
     - Add AXI GPIO block:
@@ -180,7 +180,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
             - click OK
         - connect left-side ports of `axi_gpio_0` block:
             - `S_AXI` to `M01_AXI` port on the `axi_interconnect_0` block
-            - `s_axi_clk` to the same wire that goes to the `s_axi_clk` port
+            - `s_axi_aclk` to the same wire that goes to the `s_axi_aclk` port
               of other blocks
             - same for `s_axi_aresetn`
         - right-click on GPIO port of `axi_gpio_0` block and select "Create
@@ -188,7 +188,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 
     - Update `axi_interconnect_0` block:
         - move the `M03_AXI` connection on the interconnect to `M02_AXI` so
-          that only the first three `Mxx_AX`I ports are used
+          that only the first three `Mxx_AXI` ports are used
         - double-click on the `axi_interconnect_0` block to edit its
           properties; change number of master interfaces from 6 to 3
 
@@ -202,13 +202,15 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     - Double-click the `Clocks_and_Resets` block:
         - double-click the `clk_wiz_0` block to edit its configuration; go to
           the Output Clocks tab:
-            - disable clk_out2
+            - disable `clk_out2`
             - set `clk_out1` output frequency to 100 MHz (the input clock is set
               to 100 MHz and there seems to be no way to change this, so what
               we're doing here is setting output clock frequency = input clock
               frequency)
-            - click OK
-        - delete the `proc_sys_reset_DAPlink`, `i_interconnect_aresetn`,
+            - click OK. If this gives an error, it might be because your locale settings
+              are incorrect. This can be solved by running vivado with
+              `LC_ALL=en_US.UTF-8 /path/to/vivado`.
+        - delete the `proc_sys_reset_DAPLink`, `i_interconnect_aresetn`,
           `i_peripheral_aresetn1`, and `i_sysresetn_or` blocks
         - delete the dangling `clk_qspi` and `aux_reset_in` ports
         - connect the `mb_reset` output of `proc_sys_reset_base` to the
@@ -222,7 +224,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - connect the `xlconstant_8` output to the `aux_reset_in` input of
           `proc_sys_reset_base`
         - right-click in the design window, select Create Pin, and create an
-          output pin named "locked"; connect it to the "locked" output of
+          output pin named "locked"; connect it to the `locked` output of
           `clk_wiz_0`
         - the `Clocks_and_Resets` block diagram should now look like this:
         ![picture](images/clocks_and_resets.png)
@@ -234,7 +236,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - type: clock
         - click OK
         - wire the newly-created `ext_clock` to the `clk_cpu` net
-          ![picture](images/ext_clk.png)
+        ![picture](images/ext_clk.png)
 
     - Repeat the above to create an output data pin named `locked`,
       connected to the `locked` output of `Clocks_and_Resets`
