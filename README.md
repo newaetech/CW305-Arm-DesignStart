@@ -3,7 +3,8 @@
 Arm freely provides its Cortex M1 and Cortex M3 processors as soft-core IP for
 evaluation through its
 [DesignStart](https://developer.arm.com/ip-products/designstart/fpga)
-program. Arm also provides a workflow and tutorials for implementing the
+program. This will require one to both *Apply* and sign-up. Arm also
+provides a workflow and tutorials for implementing the
 M1 or M3 on the popular [Digilent Arty
 A7](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start)
 FPGA platform.
