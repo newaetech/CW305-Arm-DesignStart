@@ -456,8 +456,8 @@ so that their contents may be updated. First we must generate this MMI file:
    to set the correct part for your CW305 board (`xc7a100tftg256-2` or
    `xc7a35tftg256-2`).
 
-2. In Vivado, click "Open Implemented Design", then in the Tcl console,
-   navigate to project directory and run: `source make_mmi_file.tcl`
+2. In Vivado, reopen the project and in the sidebar click "Open Implemented Design",
+   then in the Tcl console, navigate to project directory and run: `source make_mmi_file.tcl`
 
 
 # Compile software
@@ -515,8 +515,7 @@ The J16 DIP-switch selects the M3 input clock:
 
 The `Setup_DesignStart.ipynb` notebook expects J16 to be set to 0.
 
-Refer to the [CW305
-documentation](https://newaetech.github.io/documentation-master/Targets/CW305%20Artix%20FPGA/)
+Refer to the [CW305 documentation](https://www.newae.com/products/NAE-CW305)
 for more information on the features and capabilities of the CW305 board.
 
 
