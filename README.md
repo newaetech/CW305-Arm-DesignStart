@@ -421,7 +421,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     - `make_prog_files.tcl`
     - `make_mmi_file.tcl`
 
-3. Edit `v:/hardware/m3_for_arty_a7/SS_for_CW305/make_prog_files.tcl`:
+3. Edit `v:/hardware/CW305_DesignStart/make_prog_files.tcl`:
     - change `source_bit_file` to
       `./CW305_DesignStart.runs/impl_1/CW305_designstart_top.bit`
     - rename `output_bit_file` to `CW305_DesignStart.bit`
