@@ -145,6 +145,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 3. Follow the instructions in section 2.4 of the Arm DesignStart user guide,
    but replace `m3_for_arty_a7` with `CW305_DesignStart`. Make sure `Arty A7-100`
    is selected at `Tools -> Settings -> Project Settings -> General -> Project device` afterwards.
+   It will display a message to your upgrade IP blocks. Here you can upgrade using the default settings.
 
 5. Do not follows steps 2.5 and 2.6:
     - Step 2.5 is not necessary because our CW305 port does not use QSPI
