@@ -2,7 +2,7 @@
 
 Arm freely provides its Cortex M1 and Cortex M3 processors as soft-core IP for
 evaluation through its
-[DesignStart](https://developer.arm.com/ip-products/designstart/fpga)
+[DesignStart](https://www.arm.com/resources/free-arm-cortex-m-on-fpga)
 program. This will require one to both *Apply* and sign-up. Arm also
 provides a workflow and tutorials for implementing the
 M1 or M3 on the popular [Digilent Arty
@@ -10,7 +10,7 @@ A7](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start
 FPGA platform.
 
 In this note we explain how to port the Arty DesignStart platform to our
-own [CW305](https://wiki.newae.com/CW305_Artix_FPGA_Target) platform.
+own [CW305](https://rtfm.newae.com/Targets/CW305%20Artix%20FPGA/) platform.
 We show how to generate the FPGA bitfile, then we show how to build our
 [standard simpleserial AES victim
 firmware](https://github.com/newaetech/chipwhisperer/tree/develop/hardware/victims/firmware/simpleserial-aes) and run our standard Jupyter tutorials.
@@ -26,7 +26,7 @@ own needs. Here are a few examples of what you can do:
 
 Before starting, it's a good idea to watch the series of videos that Arm put
 together to show the development cycle for DesignStart on the Arty board:
-https://developer.arm.com/ip-products/designstart/fpga/fpga-xilinx
+https://youtu.be/kSaQJGSu-yI
 
 This will give you an idea of what's possible and what the development cycle
 is like.
@@ -76,7 +76,7 @@ The recipe provided here was tested with Windows 10.
 ### Install Xilinx Vivado
 
 Create a Xilinx account and download Vivado Design Suite 2019.1 from 
-https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2019-1.html.
+https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html.
 You should select the original 2019.1 release, *not* the update 1 or update 2
 version.  You want the one where the Windows installer has this MD5 checksum:
 
@@ -92,7 +92,7 @@ appears to have undergone significant changes in 2019.2).
 ### Download DesignStart package
 
 Create an Arm account and download the DesignStart package 
-from https://developer.arm.com/ip-products/designstart/designstart-fpga.
+from https://www.arm.com/resources/free-arm-cortex-m-on-fpga.
 
 You have the option of choosing the M1 package or the M3 package. These
 instructions are written for the M3 target, but they will work for the M1
@@ -493,7 +493,8 @@ the tutorials which support the CWLITEARM platform should work (if not, read
 on to [debugging](#debugging) below).
 
 Simply skip over the initial part of the tutorials which deals with
-programming the target. Do not run the `%run
+programming the target. This means you do **not** use `STM32FProgrammer`. 
+Do not run the `%run
 "Helper_Scripts/Setup_Generic.ipynb"` cell; instead, use the
 `Setup_DesignStart.ipynb` notebook supplied
 [here](src/jupyter/Setup_DesignStart.ipynb)
