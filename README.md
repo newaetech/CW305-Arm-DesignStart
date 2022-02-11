@@ -489,8 +489,9 @@ the tutorials which support the CWLITEARM platform should work (if not, read
 on to [debugging](#debugging) below).
 
 Simply skip over the initial part of the tutorials which deals with
-programming the target. Do not run the `%run
-"Helper_Scripts/Setup_Generic.ipynb"` cell; instead, use the
+programming the target, which means you do **not** have to call `STM32FProgrammer`.
+This is already done within Keil.
+Do not run the `%run "Helper_Scripts/Setup_Generic.ipynb"` cell; instead, use the
 `Setup_DesignStart.ipynb` notebook supplied
 [here](src/jupyter/Setup_DesignStart.ipynb)
 
