@@ -534,6 +534,19 @@ regenerated.
 
 Finally, update the FPGA bitfile with the `make_prog_files.bat` script.
 
+# Common Problems
+
+1. In contrast to the board with the dedicated ARM microcontroller, the software
+   `main` function may not automatically started. This will show itself in a
+   error:
+
+```
+WARNING:ChipWhisperer Scope:Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid.
+```
+
+   To actually start the software, it may be necessary to press the reset
+   button. This is by default set to the `SW4` button, which is close to the
+   `CLKIN` and `CLKOUT` lines on the CW305.
 
 # Debugging
 The three LEDs located above the SMA connectors on the bottom of the CW305
