@@ -717,7 +717,11 @@ After making all of our modifications, we have to regenerate our
 
 ### Additional information
 
-Here are some sidenotes when wanting to clock glitch the softcore.
+One thing to consider is that the softcore processor now directly utilizes the
+`sys_clock` instead of stabilizing the clock in the FPGA DCM. This clock is
+running at a 20MHz by default.
+
+Here are some other notes when wanting to clock glitch the softcore.
 
 #### Programmatically using the reset
 
