@@ -794,6 +794,9 @@ provide some limited visibility into the target status:
   `axi_uartlite_0` block. Inactivity can also be caused by mistakes in the
   bitfile update flow.
 
+If you are not receiving anything at all, [did you reset the
+processor?](#no-reset-at-start).
+
 If you get clean FPGA and software builds but yet the target isn't
 responding, here is a list of possible causes:
 - Did you [update the MMI file?](#update-mmi-file)
