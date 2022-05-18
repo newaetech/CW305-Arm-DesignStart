@@ -797,7 +797,7 @@ provide some limited visibility into the target status:
   bitfile update flow.
 
 If you are not receiving anything at all, [did you reset the
-processor?](#no-reset-at-start).
+processor?](#resetting-at-start-up).
 
 If you get clean FPGA and software builds but yet the target isn't
 responding, here is a list of possible causes:
