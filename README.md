@@ -520,6 +520,21 @@ The `Setup_DesignStart.ipynb` notebook expects J16 to be set to 0.
 Refer to the [CW305 documentation](https://www.newae.com/products/NAE-CW305)
 for more information on the features and capabilities of the CW305 board.
 
+## Common Problems
+
+### No reset at the start
+
+In contrast to the board with the dedicated ARM microcontroller, the software
+`main` function may not automatically started. This is because the FPGA has not
+received a reset signal. This could be the cause of the following error:
+
+```
+WARNING:ChipWhisperer Scope:Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid.
+```
+
+To actually start the software, it may be necessary to press the reset button.
+This is by default set to the `SW4` button, which is close to the `CLKIN` and
+`CLKOUT` lines on the CW305.
 
 # Next steps
 
