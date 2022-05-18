@@ -224,7 +224,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
           to the `peripheral_aresetn` output port
         - connect the `sysresetreq` input pin to the `mb_debug_sys_rst`
           input of `proc_sys_reset_base`
-        - connect the `xlconstant_8` output to the `aux_reset_in` input of
+        - connect the `xlconstant_1` output to the `aux_reset_in` input of
           `proc_sys_reset_base`
         - right-click in the design window, select Create Pin, and create an
           output pin named "locked"; connect it to the `locked` output of
