@@ -66,7 +66,7 @@ module CW305_designstart_top (
 
   assign swdio = SWDOEN ? SWDO : 1'bz;
   assign SWDI = swdio;
-  assign AND_resets = reset && ext_reset;
+  assign AND_resets = reset & ext_reset;
 
   reg [22:0] count;
 
