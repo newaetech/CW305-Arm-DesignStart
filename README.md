@@ -267,6 +267,9 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     - Repeat the above to create an output data pin named `M3_RESET_OUT`,
       connected to the `sysresetn` output of `Clocks_and_Resets`
 
+    - Repeat the above to create an **input** data pin named `clk_wiz_enable`,
+      connected to the `clk_wiz_enable` output of `Clocks_and_Resets`
+
     - Delete the `tri_io_buf_0` block
         - delete the dangling `TDO[0:0]` output port
         - for each of the following `Cortex_M3_0` outputs, right-click on
