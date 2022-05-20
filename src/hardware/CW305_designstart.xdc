@@ -16,6 +16,9 @@ set_property PACKAGE_PIN M16 [get_ports ext_clock]
 # SW4 button on board:
 set_property PACKAGE_PIN R1 [get_ports reset];
 
+# Use the USBSPARE0 (A5) for the external reset
+set_property PACKAGE_PIN A5 [get_ports ext_reset];
+
 # JTAG:
 set_property PULLUP true [get_ports nTRST]
 set_property PULLDOWN true [get_ports TDI]

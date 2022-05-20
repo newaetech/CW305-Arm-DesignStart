@@ -33,10 +33,11 @@ module CW305_designstart_top (
   inout  wire SWOTDO,
   input  wire nTRST,
   input  wire reset,
+  input  wire ext_reset,
   input  wire tio_clkin,
   input  wire pll_clk1,
   input  wire j16_sel,  // clock source select
-  input  wire k16_sel,  // unused
+  input  wire k16_sel,  // clock wizard enable
   input  wire l14_sel,  // unused
   input  wire k15_sel,  // unused
 
@@ -67,8 +68,8 @@ module CW305_designstart_top (
 
   reg [22:0] count;
 
-  always @(posedge ext_clock or negedge reset) begin
-     if (!reset)
+  always @(posedge ext_clock or negedge reset or negedge ext_reset) begin
+     if (!reset || !ext_reset)
         count <= 23'b0;
      else if (trig_out == 1'b0) // disable counter during capture to minimize noise
         count <= count + 1;
@@ -96,7 +97,9 @@ module CW305_designstart_top (
         .SWV                    (swv),
         .nTRST                  (nTRST),
         .reset                  (reset),
+        .ext_reset              (ext_reset),
         .sys_clock              (sys_clock),
+        .clk_wiz_enable         (k16_sel),
         .ext_clock              (ext_clock),
         .gpio_rtl_0_tri_o       (trig_out),
         .usb_uart_rxd           (uart_rxd),
