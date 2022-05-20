@@ -202,6 +202,10 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - click OK  
         ![picture](images/axi_uartlite.png)
 
+    - File > Add Sources > Add or create design sources > Next;
+        - Add Files, select [`clk_select.v`](src/hardware/clk_select.v)
+        - select "Copy sources into project"; Finish
+
     - Double-click the `Clocks_and_Resets` block:
         - double-click the `clk_wiz_0` block to edit its configuration; go to
           the Output Clocks tab:
@@ -226,9 +230,25 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
           input of `proc_sys_reset_base`
         - connect the `xlconstant_1` output to the `aux_reset_in` input of
           `proc_sys_reset_base`
+		- right-click in the design window, select "Add Module" and select
+		  `clk_select.v`.
+		- Add a connection from `clk_select_0->sys_clock` to the `sys_clock`
+		  input pin.
         - right-click in the design window, select Create Pin, and create an
-          output pin named "locked"; connect it to the `locked` output of
-          `clk_wiz_0`
+		  input pin named `clk_wiz_enable`; connect it to the `clk_wiz_enable`
+		  input of `clk_select_0`
+        - right-click in the design window, select Create Pin, and create an
+          output pin named `locked`; connect it to the `locked` output of
+          `clk_select_0`
+		- remove the connection between `clk_wiz_0->locked` and
+		  `proc_sys_reset_base->dcm_locked`
+		- remove the connection between `clk_wiz_0->clk_out_1` and
+		  `proc_sys_reset_base->slowest_sync_clk`
+		- connect `clk_wiz_0->clk_out_1` and `clk_select_0->clk_wiz_clk`
+		- connect `clk_wiz_0->locked` and `clk_select_0->clk_wiz_locked`
+		- connect `clk_select_0->clk_cpu` and `proc_sys_reset_base->slowest_sync_clk`
+		- connect `clk_select_0->clk_cpu` and the `clk_cpu` output
+		- connect `clk_select_0->locked` and `proc_sys_reset_base->dcm_locked`
         - the `Clocks_and_Resets` block diagram should now look like this:
         ![picture](images/clocks_and_resets.png)
 
@@ -335,7 +355,8 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 8. Replace the top-level design file:
     - File > Add Sources > Add or create design sources > Next;
         - Add Files, select 
-          [`CW305_designstart_top.v`](src/hardware/CW305_designstart_top.v)
+          [`CW305_designstart_top.v`](src/hardware/CW305_designstart_top.v) and
+		  [`clk_select.v`](src/hardware/clk_select.v)
         - select "Copy sources into project"; Finish
     - in the Sources tree, right-click on `CW305_designstart_top.v` and select
       "Set As Top"
@@ -528,8 +549,11 @@ the running program.
 The J16 DIP-switch selects the M3 input clock:
 - 0: the input clock is the CW305 PLL1
 - 1: the input clock is the HS2 pin (e.g. clkgen from ChipWhisperer)
-
 The `Setup_DesignStart.ipynb` notebook expects J16 to be set to 0.
+
+The K16 DIP-switch enables the clock wizard:
+- 0: Use the raw input clock (useful for clock glitching)
+- 1: Use the clock from the clocking wizard
 
 Refer to the [CW305 documentation](https://www.newae.com/products/NAE-CW305)
 for more information on the features and capabilities of the CW305 board.
