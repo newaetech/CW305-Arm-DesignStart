@@ -565,185 +565,23 @@ Modifying the target software is easy. Make your changes and rebuild in Keil,
 then update the previous FPGA bitfile with the `make_prog_files.bat` script.
 No need to recompile the FPGA bitfile from scratch.
 
-## Setting up for clock glitching
+## Additional information for clock glitching
 
-Currently, the hardware is not suited for clock glitching the softcore. Here are
-the steps needed to allow for that.
+For clock glitching you probably do not want to use the clock wizard. Thus, the
+K16 switch should be set to 0. One thing to consider is that the softcore
+processor now directly utilizes the `sys_clock` instead of stabilizing the
+clock in the FPGA DCM. This clock is running at a 20MHz by default.
 
-### Directly using the input clock (1/6)
+Furthermore, the glitched clock signal from the capture device is coming in on
+`hs2`. We can enable and disable glitching then with
 
-1. Go back into Vivado and open your
-`V:/hardware/CW305_DesignStart/CW305_DesignStart.xpr` project.
-2. Open the block diagram by double clicking on `Sources->Design Sources->CW305_designstart_top->m3_for_arty_a7_i`.
-3. Go into the `Clocks_and_Resets` component.
-4. Remove the `clk_wiz_0`.
-5. Connect the `sys_clock` with the `clk_cpu` output port and with the
-   `proc_sys_reset_base->slowest_sync_clk`.
-6. Duplicate the `xlconstant_1` and connect the output of the newly created
-   `xlconstant_2` the output port `locked` and
-   `proc_sys_reset_base->dcm_locked`.
+```python
+# Enable glitching
+scope.io.hs2 = "glitch"
 
-The `Clocks_and_Resets` block diagram should now look something like the
-following:
-![Clock Glitch Setup Clocks and Resets](./images/clk_glitch_clocks_and_resets.png)
-
-If you move to "Step 6: Regenerating the bitfile" now, clock glitching should
-work. The problem being that you will need to manually reset the softcore each
-time. So we will add a external reset signal which we can set from the capture
-board.
-
-### Adding the `ext_reset` port (2/6)
-
-Steps 2 to 4 focus on creating a reset signal which can be set from the capture
-board and thus programmatically.
-
-1. From the `Clocks_and_Resets` in step 1, go back to the main block diagram.
-2. Add create a new input port by clicking right click on the block diagram and
-   `Create Port`. This should be an `Input` port called `ext_reset` of type
-   `Reset` and Sensitivity equal to `Active High`.
-
-### Linking with the existing reset logic (3/6)
-
-A low `reset` or a low `ext_reset` should cause the softcore to reset. We need
-to add some logic for this.
-
-1. In the main block diagram, right click and click `Add IP`. Select Utility Vector Logic.
-2. Open this new component. Set `C_SIZE` equal to `1` and for `C_OPERATION`
-   select the option `and`.
-3. Name this component `Reset_AND`.
-4. Remove the connection between the `reset` input port and `sys_reset_n`.
-5. Add a connection from `reset` to the newly created `Reset_XOR->Op1` and from
-   `ext_reset` to `Reset_AND->Op2`.
-6. Add a connection from `Reset_XOR->Res` to `sys_reset_n`
-
-This should all look something like the following:
-![Clock Glitch Setup External Reset](./images/clk_glitch_ext_reset.png)
-
-### Modifying the top-level Verilog (4/6)
-
-Now, we will adjust the top-level Verilog file to include our `ext_reset`
-
-1. Open the `CW305_designstart_top.v` file by double clicking
-   `Sources->Design Sources->CW305_designstart_top`. We will be adding and
-   adjusting a few lines here. Don't worry it is not that complicated.
-2. Add the port to the top-level by adding `input wire ext_reset,` below `input
-   wire reset,`.
-3. Connect this top-level port to block diagram port by adding
-   `.ext_reset (ext_reset),` below `.reset	(reset),`.
-4. The next two steps disable the clock indicator led while we are resetting.
-5. Replace `always @(posedge ext_clock or negedge reset)` with
-   `always @(posedge ext_clock or negedge reset or negedge ext_reset)`.
-6. Replace `if (!reset)` with `if (!reset || !ext_reset)`.
-
-The final should look something like the following:
-
-```verilog
-// ... other code
-
-module CW305_designstart_top (
-  inout  wire swdio,
-  input  wire swclk,
-  input  wire TDI,
-  inout  wire SWOTDO,
-  input  wire nTRST,
-  input  wire reset,
-  input  wire ext_reset,
-  input  wire tio_clkin,
-  input  wire pll_clk1,
-  input  wire j16_sel,  // clock source select
-  input  wire k16_sel,  // unused
-  input  wire l14_sel,  // unused
-  input  wire k15_sel,  // unused
-
-// ... other code
-
-  always @(posedge ext_clock or negedge reset or nededge ext_reset) begin
-     if (!reset || !ext_reset)
-        count <= 23'b0;
-     else if (trig_out == 1'b0) // disable counter during capture to minimize noise
-        count <= count + 1;
-  end
-
-  // ... other code
-
-  `ifndef __ICARUS__
-  m3_for_arty_a7 m3_for_arty_a7_i
-       (.SWCLK                  (swclk),
-        .SWDI                   (SWDI),
-        .SWDO                   (SWDO),
-        .SWDOEN                 (SWDOEN),
-        .JTAGTOP                (JTAGTOP),
-        .JTAGNSW                (JTAGNSW),
-        .TDI                    (TDI),
-        .TDO                    (tdo),
-        .nTDOEN                 (nTDOEN),
-        .SWV                    (swv),
-        .nTRST                  (nTRST),
-        .reset                  (reset),
-        .ext_reset              (ext_reset),
-        .sys_clock              (sys_clock),
-        .ext_clock              (ext_clock),
-        .gpio_rtl_0_tri_o       (trig_out),
-        .usb_uart_rxd           (uart_rxd),
-        .usb_uart_txd           (uart_txd),
-
-  // ... other code
+# Disable glitching
+scope.io.hs2 = "clkgen"
 ```
-
-### Modifying the constraints (5/6)
-
-Then finally, we need to connect our `ext_reset` to a pin on the board. We will
-use `T15` which corresponds to the `TIO3` signal from the scope. We can easily
-control this signal using the python interface.
-
-1. Open the constraint file `CW305_designstart.xdc` by double clicking 
-   `Sources->Constraints->CW305_designstart.xdc`.
-2. Add the line `set_property PACKAGE_PIN T15 [get_ports ext_reset];` somewhere.
-
-The constraint file should now look something like
-
-```xdc
-// ... other code
-
-# output clock to CW lite so it can use it for sampling: HS1 on 20-pin
-set_property PACKAGE_PIN M16 [get_ports ext_clock]
-
-# SW4 button on board:
-set_property PACKAGE_PIN R1 [get_ports reset];
-
-# Use TIO3 for the external reset
-set_property PACKAGE_PIN T15 [get_ports ext_reset];
-
-# JTAG:
-set_property PULLUP true [get_ports nTRST]
-set_property PULLDOWN true [get_ports TDI]
-
-// ... other code
-```
-
-### Regenerating the bitfile (6/6)
-
-After making all of our modifications, we have to regenerate our
-`CW305_DesignStart.bit` file.
-
-1. Within Vivado click `Flow->Generate the bitstream`. This generates the
-   bitstream similar to before. This will take a while. You view the progress in
-   in the `Design Runs` tab.
-2. Once it is done click on `Open Implemented Design` and open the `Tcl console`
-   tab.
-3. Navigate to the `V:/hardware/CW305_DesignStart/` folder using `cd` and type
-   `source make_mmi_file.tcl`.
-5. Close Vivado. If you have previously compiled the software in Keil, there is
-   no need to do it again. If not, please refer back to [Compile
-   Software](#compile-software) step. Afterwards, run
-   `V:/hardware/CW305_DesignStart/make_prog_files.bat`. Now your bitfile is
-   ready.
-
-### Additional information
-
-One thing to consider is that the softcore processor now directly utilizes the
-`sys_clock` instead of stabilizing the clock in the FPGA DCM. This clock is
-running at a 20MHz by default.
 
 Here are some other notes when wanting to clock glitch the softcore.
 
@@ -756,13 +594,15 @@ from time import sleep
 
 # ... Initiate the scope, ftarget and target
 
+fpga_io = ftarget.gpio_mode()
+
 # Set ext_reset to its active high
-scope.io.tio = "gpio_high"
+fpga_io.pin_set_state("USBSPARE0", 1)
 
 def reboot_flush():
-    scope.io.tio3 = "gpio_low"
+    fpga_io.pin_set_state("USBSPARE0", 0)
     sleep(0.1)
-    scope.io.tio3 = "gpio_high"
+    fpga_io.pin_set_state("USBSPARE0", 1)
     sleep(0.1)
 
     # Flush garbage too
