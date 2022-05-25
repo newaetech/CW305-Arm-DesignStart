@@ -38,14 +38,22 @@ module CW305_designstart_top (
   clk_cpu,
   locked,
 );
-  input  wire clk_wiz_enable; // 0 = sys_clock, 1 = clk_wiz
-  input  wire sys_clock;
-  input  wire clk_wiz_clk;
-  input  wire clk_wiz_locked; // Active High
+  input clk_wiz_enable; // 0 = sys_clock, 1 = clk_wiz
+  input sys_clock;
+  input clk_wiz_clk;
+  input clk_wiz_locked; // Active High
 
-  output wire clk_cpu;
-  output wire locked; // locked is Active High
+  output clk_cpu;
+  output locked; // locked is Active High
+
+  wire clk_wiz_enable;
+  wire sys_clock;
+  wire clk_wiz_clk;
+  wire clk_wiz_locked;
+
+  wire clk_cpu;
+  wire locked;
 
   assign clk_cpu = clk_wiz_enable ? clk_wiz_clk : sys_clock;
-  assign locked = ~clk_wiz_enable ? clk_wiz_locked : 1'b1;
+  assign locked  = clk_wiz_enable ? clk_wiz_locked : 1'b1;
 endmodule
