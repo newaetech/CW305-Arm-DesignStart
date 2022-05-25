@@ -58,7 +58,6 @@ module CW305_designstart_top (
   wire SWDOEN;
   wire JTAGTOP;
   wire JTAGNSW;
-  wire AND_resets;
   wire tdo;
   wire m3_reset_out;
   wire swotdo;
@@ -66,12 +65,11 @@ module CW305_designstart_top (
 
   assign swdio = SWDOEN ? SWDO : 1'bz;
   assign SWDI = swdio;
-  assign AND_resets = reset & ext_reset;
 
   reg [22:0] count;
 
-  always @(posedge ext_clock or negedge AND_resets) begin
-     if (!AND_resets)
+  always @(posedge ext_clock or negedge reset or negedge ext_reset) begin
+     if (!reset || !ext_reset)
         count <= 23'b0;
      else if (trig_out == 1'b0) // disable counter during capture to minimize noise
         count <= count + 1;
@@ -98,7 +96,8 @@ module CW305_designstart_top (
         .nTDOEN                 (nTDOEN),
         .SWV                    (swv),
         .nTRST                  (nTRST),
-        .reset                  (AND_resets),
+        .reset                  (reset),
+        .ext_reset              (ext_reset),
         .sys_clock              (sys_clock),
         .clk_wiz_enable         (k16_sel),
         .ext_clock              (ext_clock),

@@ -278,6 +278,23 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
             - `nTDOEN`
             - `SWV`
 
+    - Add create a new input port by clicking right click on the block diagram and
+      `Create Port`. This should be an `Input` port called `ext_reset` of type
+      `Reset` and Sensitivity equal to `Active High`.
+
+    - In the main block diagram, right click and click `Add IP`. Select Utility Vector Logic.
+        - Open this new component. Set `C_SIZE` equal to `1` and for `C_OPERATION`
+          select the option `and`.
+        - Name this component `Reset_AND`.
+        - Remove the connection between the `reset` input port and `sys_reset_n`.
+        - Add a connection from `reset` to the newly created `Reset_AND->Op1`
+          and from `ext_reset` to `Reset_AND->Op2`.
+        - Add a connection from `Reset_AND->Res` to `sys_reset_n`
+
+    - This should all look something like the following:
+
+![Setup External Reset](./images/ext_reset.png)
+
     - Add many more missing ports:
         - right-click on the `SWDITMS` input of the `Cortex_M3_0` block and
           select "Create Port"
