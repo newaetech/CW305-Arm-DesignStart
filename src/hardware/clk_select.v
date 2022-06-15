@@ -29,7 +29,7 @@ either expressed or implied, of NewAE Technology Inc.
 // different clocks:
 // 1. The Clock Wizard clock (+ dcm locked)
 // 2. The sys_clock which is regarded as always being locked
-module CW305_designstart_top (
+module clk_select (
   clk_wiz_enable,
   sys_clock,
   clk_wiz_clk,
