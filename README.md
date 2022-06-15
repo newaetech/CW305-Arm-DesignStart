@@ -306,7 +306,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
             - type: clock
             - frequency (MHz): 20
 
-        - select `CM3_CODE_AXI3` port of `Cortex_M3_0 block`, then
+        - select `CM3_CODE_AXI3` port of `Cortex_M3_0` block, then
           right-click in the design window and select "Create Interface
           Port"; keep the pre-filled values and click OK  
         ![picture](images/CM3_CODE_AXI3.png)
