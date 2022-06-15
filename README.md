@@ -134,7 +134,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 
 2. Clone the DesignStart project in Vivado:
    - Open Vivado and open either the DesignStart project, found here:
-     `v:/hardware/m3_for_arty_a7/m3_for_arty_a7/*xpr`
+     `v:/hardware/m3_for_arty_a7/m3_for_arty_a7/m3_for_arty_a7.xpr`
    - There will be some warnings; this is ok.
    - File > Project > Save As, with a new project name of
      CW305\_DesignStart, to `V:/hardware/CW305_DesignStart` as shown below:  
