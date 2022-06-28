@@ -4,6 +4,10 @@ set_property IOSTANDARD LVCMOS33 [get_ports *]
 create_clock -period 20.000 -name pll_clk1 -waveform {0.000 10.000} [get_nets pll_clk1]
 create_clock -period 20.000 -name tio_clkin -waveform {0.000 10.000} [get_nets tio_clkin]
 create_clock -period 20.000 -name swclk -waveform {0.000 10.000} [get_nets swclk]
+create_clock -period 10.000 -name usb_clk -waveform {0.000 5.000} [get_nets USB_clk]
+
+set_case_analysis 0 [get_pins U_clk_select/U_clk_sel1/S]
+set_case_analysis 1 [get_pins U_clk_select/U_clk_sel2/S]
 
 
 # DUT input clock from PLL_CLK1:
@@ -14,17 +18,66 @@ set_property PACKAGE_PIN N14 [get_ports tio_clkin]
 set_property PACKAGE_PIN M16 [get_ports ext_clock]
 
 # SW4 button on board:
-set_property PACKAGE_PIN R1 [get_ports reset];
+set_property PACKAGE_PIN R1 [get_ports reset_pin_n];
 
 # JTAG:
 set_property PULLUP true [get_ports nTRST]
 set_property PULLDOWN true [get_ports TDI]
 
+####### USB Connector
+set_property PACKAGE_PIN F5 [get_ports USB_clk]
+
+set_property PACKAGE_PIN A7 [get_ports {USB_Data[0]}]
+set_property PACKAGE_PIN B6 [get_ports {USB_Data[1]}]
+set_property PACKAGE_PIN D3 [get_ports {USB_Data[2]}]
+set_property PACKAGE_PIN E3 [get_ports {USB_Data[3]}]
+set_property PACKAGE_PIN F3 [get_ports {USB_Data[4]}]
+set_property PACKAGE_PIN B5 [get_ports {USB_Data[5]}]
+set_property PACKAGE_PIN K1 [get_ports {USB_Data[6]}]
+set_property PACKAGE_PIN K2 [get_ports {USB_Data[7]}]
+
+set_property PACKAGE_PIN F4 [get_ports {USB_Addr[0]}]
+set_property PACKAGE_PIN G5 [get_ports {USB_Addr[1]}]
+set_property PACKAGE_PIN J1 [get_ports {USB_Addr[2]}]
+set_property PACKAGE_PIN H1 [get_ports {USB_Addr[3]}]
+set_property PACKAGE_PIN H2 [get_ports {USB_Addr[4]}]
+set_property PACKAGE_PIN G1 [get_ports {USB_Addr[5]}]
+set_property PACKAGE_PIN G2 [get_ports {USB_Addr[6]}]
+set_property PACKAGE_PIN F2 [get_ports {USB_Addr[7]}]
+set_property PACKAGE_PIN E1 [get_ports {USB_Addr[8]}]
+set_property PACKAGE_PIN E2 [get_ports {USB_Addr[9]}]
+set_property PACKAGE_PIN D1 [get_ports {USB_Addr[10]}]
+set_property PACKAGE_PIN C1 [get_ports {USB_Addr[11]}]
+set_property PACKAGE_PIN K3 [get_ports {USB_Addr[12]}]
+set_property PACKAGE_PIN L2 [get_ports {USB_Addr[13]}]
+set_property PACKAGE_PIN J3 [get_ports {USB_Addr[14]}]
+set_property PACKAGE_PIN B2 [get_ports {USB_Addr[15]}]
+set_property PACKAGE_PIN C7 [get_ports {USB_Addr[16]}]
+set_property PACKAGE_PIN C6 [get_ports {USB_Addr[17]}]
+set_property PACKAGE_PIN D6 [get_ports {USB_Addr[18]}]
+set_property PACKAGE_PIN C4 [get_ports {USB_Addr[19]}]
+set_property PACKAGE_PIN D5 [get_ports {USB_Addr[20]}]
+
+set_property PACKAGE_PIN A4 [get_ports USB_nRD]
+set_property PACKAGE_PIN C2 [get_ports USB_nWE]
+set_property PACKAGE_PIN A3 [get_ports USB_nCS]
+#set_property PACKAGE_PIN A2 [get_ports USB_nALE]
+
+set_input_delay -clock usb_clk 2.0 [get_ports USB_nCS]
+set_input_delay -clock usb_clk 2.0 [get_ports USB_nRD]
+set_input_delay -clock usb_clk 2.0 [get_ports USB_nWE]
+set_input_delay -clock usb_clk 2.0 [get_ports USB_Data]
+set_input_delay -clock usb_clk 2.0 [get_ports USB_Addr]
+
+# read data will be grabbed one cycle later so no need to constrain:
+set_output_delay -clock usb_clk 0.0 [get_ports USB_Data]
+set_false_path -to [get_ports USB_Data]
+
 
 # Master clock frequencies derived from clock wizard
 
 # Rename main clock for clarity:
-create_generated_clock -name cpu_clk  [get_pins {m3_for_arty_a7_i/Clocks_and_Resets/clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0} ]
+create_generated_clock -name cpu_clk  [get_pins {U_clk_select/clk_wiz_0/inst/mmcm_adv_inst/CLKOUT0} ]
 # virtual clock:
 create_clock -period 100.000 -name slow_out_clk
 
@@ -61,12 +114,12 @@ set_property PACKAGE_PIN K15 [get_ports k15_sel]
 # Debug on JP3:
 # --------------------------------------------------
 set_property PACKAGE_PIN A12 [get_ports swv]
-#set_property PACKAGE_PIN A14 [get_ports ]
-#set_property PACKAGE_PIN A15 [get_ports ]
-#set_property PACKAGE_PIN C12 [get_ports ]
-#set_property PACKAGE_PIN B14 [get_ports ]
-#set_property PACKAGE_PIN B16 [get_ports ]
-#set_property PACKAGE_PIN C13 [get_ports ]
+#set_property PACKAGE_PIN A14 [get_ports {  }]
+#set_property PACKAGE_PIN A15 [get_ports {  }]
+#set_property PACKAGE_PIN C12 [get_ports {  }]
+#set_property PACKAGE_PIN B14 [get_ports {  }]
+#set_property PACKAGE_PIN B16 [get_ports {  }]
+#set_property PACKAGE_PIN C13 [get_ports { }]
 
 set_property PACKAGE_PIN C11 [get_ports { SWOTDO }]
 set_property PACKAGE_PIN B12 [get_ports { TDI }]

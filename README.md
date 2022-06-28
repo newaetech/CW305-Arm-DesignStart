@@ -203,17 +203,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         ![picture](images/axi_uartlite.png)
 
     - Double-click the `Clocks_and_Resets` block:
-        - double-click the `clk_wiz_0` block to edit its configuration; go to
-          the Output Clocks tab:
-            - disable `clk_out2`
-            - set `clk_out1` output frequency to 100 MHz (the input clock is set
-              to 100 MHz and there seems to be no way to change this, so what
-              we're doing here is setting output clock frequency = input clock
-              frequency)
-            - click OK. If this gives an error, it might be because your locale settings
-              are incorrect. This can be solved by running vivado with
-              `LC_ALL=en_US.UTF-8 /path/to/vivado`.
-        - delete the `proc_sys_reset_DAPLink`, `i_interconnect_aresetn`,
+        - delete the `clk_wiz_0`, `proc_sys_reset_DAPLink`, `i_interconnect_aresetn`,
           `i_peripheral_aresetn1`, and `i_sysresetn_or` blocks
         - delete the dangling `clk_qspi` and `aux_reset_in` ports
         - connect the `mb_reset` output of `proc_sys_reset_base` to the
@@ -227,8 +217,10 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - connect the `xlconstant_8` output to the `aux_reset_in` input of
           `proc_sys_reset_base`
         - right-click in the design window, select Create Pin, and create an
-          output pin named "locked"; connect it to the `locked` output of
-          `clk_wiz_0`
+          input pin named "locked_i"; connect it to the `dcm_locked` input of
+          `proc_sys_reset_base`
+        - connect the `sys_clock` input to the `clk_cpu` output and to the 
+          `proc_sys_reset_base` `slowest_sync_clk` input
         - the `Clocks_and_Resets` block diagram should now look like this:
         ![picture](images/clocks_and_resets.png)
 
@@ -241,8 +233,8 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - wire the newly-created `ext_clock` to the `clk_cpu` net
         ![picture](images/ext_clk.png)
 
-    - Repeat the above to create an output data pin named `locked`,
-      connected to the `locked` output of `Clocks_and_Resets`
+    - Repeat the above to create an input data pin named `locked`,
+      connected to the `locked_i` input of `Clocks_and_Resets`
 
     - Repeat the above to create an output data pin named `M3_RESET_OUT`,
       connected to the `sysresetn` output of `Clocks_and_Resets`
@@ -334,8 +326,8 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 
 8. Replace the top-level design file:
     - File > Add Sources > Add or create design sources > Next;
-        - Add Files, select 
-          [`CW305_designstart_top.v`](src/hardware/CW305_designstart_top.v)
+        - Add Files, select all `*.v` files in 
+          [`src/hardware/`](src/hardware/)
         - select "Copy sources into project"; Finish
     - in the Sources tree, right-click on `CW305_designstart_top.v` and select
       "Set As Top"
@@ -353,8 +345,26 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     - remove the other two constraint files (`m3_for_arty_a7.xdc`,
       `m3_for_arty_a7_impl.xdc`) from the project
 
+10. Generate the FPGA PLL: this is needed because we've deleted the PLL from
+    the `clocks_and_resets` block and moved it to the top-level Verilog.
+    Under "Project Manager", click on "IP Catalog", search for "clock
+    wizard", and double-click on the "Clocking Wizard" search result. In the
+    "Clocking Options" tab, select the following options:
+     - MMCM
+     - Frequency Synthesis
+     - Phase Alignment
+     - Safe Clock Startup
+     - Balanced
+     - set clk_in1 frequency to 100 MHz
 
-10. Generate the FPGA bitstream: in the Flow Navigator pane, select "Generate
+    In the "Output Clocks" tab, set the following:
+     - clk_out1 requested frequency to 100 MHz
+     - clocking feedback: Automatic Control On-Chip
+     - Enable Optional Inputs/Outputs: locked
+
+    Then click "OK", and "generate" (this can take a while).
+
+11. Generate the FPGA bitstream: in the Flow Navigator pane, select "Generate
     Bitstream". This will take on the order of 30 minutes. There should be
     no errors, but there will be warnings. In particular, timing will not be
     met: I haven't figured out how to change the target clock rate from 100
@@ -369,7 +379,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     Vivado :-)*
 
 
-11. File > Export > Export Hardware, to `V:/software`
+12. File > Export > Export Hardware, to `V:/software`
 
 
 # Generate the BSP (Board Support Package)
@@ -498,7 +508,7 @@ programming the target. This means you do **not** use `STM32FProgrammer`.
 Do not run the `%run
 "Helper_Scripts/Setup_Generic.ipynb"` cell; instead, use the
 `Setup_DesignStart.ipynb` notebook supplied
-[here](src/jupyter/Setup_DesignStart.ipynb)
+[here](src/jupyter/Setup_DesignStart.ipynb).
 
 The following tutorials have been verified to succeed:
 - `PA_CPA_2-Manual_CPA_Attack.ipynb`: succeeds with a slightly higher number
@@ -521,6 +531,38 @@ Refer to the [CW305 documentation](https://www.newae.com/products/NAE-CW305)
 for more information on the features and capabilities of the CW305 board.
 
 
+## Clock glitching
+The DesignStart reference design included a PLL to clean up the input clock;
+we removed this when we modified the `Clocks_and_Resets` block in Vivado,
+because it's been moved to the top-level `CW305_designstart_top.v` Verilog
+file. This was done to allow you to selectively bypass this PLL, which can
+be useful for clock glitching. When the PLL is bypassed, the input clock
+goes directly to the Arm core.
+
+To bypass the PLL, call `bypass_fpga_pll()`. To use the PLL (which is the
+default behaviour out of reset), call `use_fpga_pll()`.  These functions are
+defined in
+[`src/jupyter/Setup_DesignStart.ipynb`](src/jupyter/Setup_DesignStart.ipynb).
+
+
+## FPGA and target resets
+The pushbutton labeled "FPGA R1 USR SW4" (near the 3 side SMA connectors)
+resets the CW305 FPGA (including the Arm DesignStart core).
+
+The FPGA can also be reset by calling `reset_fpga()` (defined in
+[`src/jupyter/Setup_DesignStart.ipynb`](src/jupyter/Setup_DesignStart.ipynb)).
+
+Finally, to reset only the Arm core, use `reset_arm_target()`. 
+
+Currently the only FPGA logic which is unaffected by the Arm core reset is
+the PLL bypass setting, but if you extend this work and add more FPGA logic,
+you may find it useful to have the two separate resets.
+
+Resetting the Arm core is sometimes required after startup. If the target is
+unresponsive (e.g. captures time out with no trigger), try resetting the
+target.
+
+
 # Next steps
 
 ## Software modifications
@@ -530,8 +572,15 @@ No need to recompile the FPGA bitfile from scratch.
 
 
 ## Hardware modifications
-Whenever a new bitstream is generated in Vivado, the MMI file must be
-updated.
+In this example, there is minimal FPGA logic alongside the Arm target. The
+CW305 FPGA has lots of space remaining for your ideas! Our
+[DesignStartTrace](https://github.com/newaetech/DesignStartTrace) project
+is one example of what you can do, and gives an worked-out example of adding
+configuration registers and setting them from Python.
+
+Keep in mind that whenever a new bitstream is generated in Vivado, the 
+`make_mmi_file.tcl` and `make_prog_files.bat` scripts must be re-run.
+
 
 Additionally, if the address map changed, then the BSP also needs to be
 regenerated.
@@ -557,6 +606,7 @@ provide some limited visibility into the target status:
 If you get clean FPGA and software builds but yet the target isn't
 responding, here is a list of possible causes:
 - Did you [update the MMI file?](#update-mmi-file)
+- Did you try [resetting the target?](#fpga-and-target-resets)
 - There are a number of scripts which move the executable generated by Keil
   towards its final destination in the FPGA bitfile; make sure these all ran
   cleanly:
@@ -571,7 +621,7 @@ responding, here is a list of possible causes:
 - If the modifications to the `Clocks_and_Resets` blocks weren't done
   properly, clocks and resets may not be getting propagated correctly. Note
   that there are several internal resets, not just the one which is routed
-  to LED5
+  to LED5.
 
 If you're still stuck, try simulation, ILAs, or routing internal signals to
 the JP3 header. Simulation is probably the right choice, unless you enjoy
