@@ -377,8 +377,8 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 10. Generate the FPGA PLL: this is needed because we've deleted the PLL from
     the `clocks_and_resets` block and moved it to the top-level Verilog.
     Under "Project Manager", click on "IP Catalog", search for "clock
-    wizard", and double-click on the "Clocking Wizard" search result. In the
-    "Clocking Options" tab, select the following options:
+	wizard", and double-click on the "Clocking Wizard" search result (Customize
+	IP). In the "Clocking Options" tab, select the following options:
      - MMCM
      - Frequency Synthesis
      - Phase Alignment
