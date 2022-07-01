@@ -389,7 +389,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     In the "Output Clocks" tab, set the following:
      - clk_out1 requested frequency to 100 MHz
      - clocking feedback: Automatic Control On-Chip
-     - Enable Optional Inputs/Outputs: locked
+     - Enable Optional Inputs/Outputs: enable locked, disable reset
 
     Then click "OK", and "generate" (this can take a while).
 
