@@ -363,9 +363,9 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     - upgrade IP blocks as required: next to the message "The design has 23
       blocks that should be upgraded.", click on "Report IP Status", then
       "upgrade selected"
-    - you will see three critical warnings related to the `clk_wiz` and
-      `proc_sys_reset_base` blocks
-        - open the `proc_sys_reset_base` block (inside the
+    - you will see three critical warnings related to the `proc_sys_reset_base`
+      blocks
+      - open the `proc_sys_reset_base` block (inside the
           `Clocks_and_Resets` block) and fix its configuration:
             - set Ext Reset Active Width to 1
             - set Aux Reset Active Width to 1
