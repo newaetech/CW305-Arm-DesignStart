@@ -1,12 +1,10 @@
 /* 
 Copyright (c) 2019-2020, NewAE Technology Inc.
 All rights reserved.
-
 Redistribution and use in source and binary forms, with or without
 modification, are permitted without restriction. Note that modules within
 the project may have additional restrictions, please carefully inspect
 additional licenses.
-
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -17,7 +15,6 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of NewAE Technology Inc.
@@ -25,21 +22,30 @@ either expressed or implied, of NewAE Technology Inc.
 
 `timescale 1 ps / 1 ps
 `default_nettype none
-
-module CW305_designstart_top (
+module CW305_designstart_top #(
+  parameter pBYTECNT_SIZE = 7,
+  parameter pADDR_WIDTH = 21
+)(
   inout  wire swdio,
   input  wire swclk,
   input  wire TDI,
   inout  wire SWOTDO,
   input  wire nTRST,
-  input  wire reset,
-  input  wire ext_reset,
+  input  wire reset_pin_n, // active low
   input  wire tio_clkin,
   input  wire pll_clk1,
   input  wire j16_sel,  // clock source select
-  input  wire k16_sel,  // clock wizard enable
+  input  wire k16_sel,  // unused
   input  wire l14_sel,  // unused
   input  wire k15_sel,  // unused
+
+  // CW305 USB:
+  input wire          USB_clk,
+  inout wire [7:0]    USB_Data,
+  input wire [pADDR_WIDTH-1:0] USB_Addr,
+  input wire          USB_nRD,
+  input wire          USB_nWE,
+  input wire          USB_nCS,
 
   output wire swv,
 
@@ -53,6 +59,7 @@ module CW305_designstart_top (
 );
 
   wire sys_clock;
+  wire locked;
   wire SWDI;
   wire SWDO;
   wire SWDOEN;
@@ -60,16 +67,18 @@ module CW305_designstart_top (
   wire JTAGNSW;
   wire tdo;
   wire m3_reset_out;
+  wire mmcm_locked;
   wire swotdo;
   wire nTDOEN;
+  wire fpga_reset;
 
   assign swdio = SWDOEN ? SWDO : 1'bz;
   assign SWDI = swdio;
 
   reg [22:0] count;
 
-  always @(posedge ext_clock or negedge reset or negedge ext_reset) begin
-     if (!reset || !ext_reset)
+  always @(posedge ext_clock or posedge fpga_reset) begin
+     if (fpga_reset)
         count <= 23'b0;
      else if (trig_out == 1'b0) // disable counter during capture to minimize noise
         count <= count + 1;
@@ -82,6 +91,18 @@ module CW305_designstart_top (
   // controls where program is fetched from:
   wire [1:0] cfg = 2'b01;
 
+  wire isout;
+  wire [7:0] cmdfifo_din;
+  wire [7:0] cmdfifo_dout;
+  wire [pBYTECNT_SIZE-1:0]  reg_bytecnt;
+  wire [7:0]   write_data;
+  wire [7:0]   read_data;
+  wire         reg_read;
+  wire         reg_write;
+  wire         reg_addrvalid;
+
+  wire target_reset;
+  wire pll_bypass;
 
   `ifndef __ICARUS__
   m3_for_arty_a7 m3_for_arty_a7_i
@@ -96,10 +117,8 @@ module CW305_designstart_top (
         .nTDOEN                 (nTDOEN),
         .SWV                    (swv),
         .nTRST                  (nTRST),
-        .reset                  (reset),
-        .ext_reset              (ext_reset),
+        .reset                  (~target_reset),    // input is active low
         .sys_clock              (sys_clock),
-        .clk_wiz_enable         (k16_sel),
         .ext_clock              (ext_clock),
         .gpio_rtl_0_tri_o       (trig_out),
         .usb_uart_rxd           (uart_rxd),
@@ -108,7 +127,7 @@ module CW305_designstart_top (
         // connect to DIP switches to get right setting...
         .CFGITCMEN              (cfg),
         .M3_RESET_OUT           (m3_reset_out),
-        .locked                 (),
+        .locked                 (locked),
 
         // unused AXI port inputs:
         .CM3_CODE_AXI3_arready  (1'b0),
@@ -150,25 +169,20 @@ module CW305_designstart_top (
   `endif
 
 
-    // choose and buffer input clock based on J16 dip switch:
-    BUFGCTRL CCLK_MUX (
-       .O                       (sys_clock),    // Clock output
-       .CE0                     (1'b1),         // Clock enable input for I0
-       .CE1                     (1'b1),         // Clock enable input for I1
-       .I0                      (pll_clk1),     // Primary clock
-       .I1                      (tio_clkin),    // Secondary clock
-       .IGNORE0                 (1'b1),         // Clock ignore input for I0
-       .IGNORE1                 (1'b1),         // Clock ignore input for I1
-       .S0                      (~j16_sel),     // Clock select for I0
-       .S1                      (j16_sel)       // Clock select for I1
-    );
-
-
+   clk_select U_clk_select (
+       .pll_clk1                (pll_clk1),
+       .tio_clkin               (tio_clkin),
+       .j16_sel                 (j16_sel),
+       .pll_bypass              (pll_bypass),
+       .sys_clock               (sys_clock),
+       .locked                  (locked)
+   );
 
   // JTAG or SW: multiplexing of other pins is handled by the M3 core, but the
   // SWO/TDO mux logic was left for us to handle:
   assign swotdo = JTAGNSW? tdo : swv;
 
+  `ifndef __ICARUS__
   OBUF #(
          .DRIVE (12),                  // Specify the output drive strength
          .IOSTANDARD ("DEFAULT")       // Specify the I/O standard
@@ -177,8 +191,66 @@ module CW305_designstart_top (
          .O (SWOTDO),
          .I (swotdo)
         ); 
+  `else
+      assign SWOTDO  = swotdo;
+  `endif
      
+  wire clk_usb_buf;
+
+   `ifdef __ICARUS__
+      assign clk_usb_buf = USB_clk;
+   `else
+      IBUFG U_usb_clk_buf (
+           .O(clk_usb_buf),
+           .I(USB_clk) );
+   `endif
+
+   assign USB_Data = isout ? cmdfifo_dout : 8'bZ;
+   assign cmdfifo_din = USB_Data;
+
+
+   wire [pADDR_WIDTH-pBYTECNT_SIZE-1:0]  reg_address;
+   cw305_usb_reg_fe #(
+      .pBYTECNT_SIZE    (pBYTECNT_SIZE)
+   ) U_usb_reg_main (
+      .rst              (fpga_reset),
+      .usb_clk          (clk_usb_buf), 
+      .usb_din          (cmdfifo_din), 
+      .usb_dout         (cmdfifo_dout), 
+      .usb_rdn          (USB_nRD), 
+      .usb_wrn          (USB_nWE),
+      .usb_cen          (USB_nCS),
+      .usb_addr         (USB_Addr),
+      .usb_isout        (isout), 
+      .I_drive_data     (1'b0),
+      .reg_address      (reg_address), 
+      .reg_bytecnt      (reg_bytecnt), 
+      .reg_datao        (write_data), 
+      .reg_datai        (read_data),
+      .reg_read         (reg_read), 
+      .reg_write        (reg_write), 
+      .reg_addrvalid    ()
+   );
+
+   reg_main #(
+      .pBYTECNT_SIZE            (pBYTECNT_SIZE),
+      .pREGISTERED_READ         (1)
+   ) U_reg_main (
+      .reset_pin_n      (reset_pin_n),
+      .fpga_reset       (fpga_reset),
+      .target_reset     (target_reset),
+      .reg_pll_bypass   (pll_bypass),
+
+      .usb_clk          (clk_usb_buf), 
+      .reg_address      (reg_address[7:0]), 
+      .reg_bytecnt      (reg_bytecnt), 
+      .read_data        (read_data), 
+      .write_data       (write_data),
+      .reg_read         (reg_read), 
+      .reg_write        (reg_write)
+   );
 
 
 endmodule
 `default_nettype wire
+

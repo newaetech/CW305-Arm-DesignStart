@@ -1,5 +1,5 @@
 /* 
-Copyright (c) 2019-2020, NewAE Technology Inc.
+Copyright (c) 2022, NewAE Technology Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted without restriction. Note that modules within
@@ -21,47 +21,67 @@ either expressed or implied, of NewAE Technology Inc.
 */
 
 `timescale 1 ps / 1 ps
-
-// This module utilizes the clk_wiz_enable wire to differentiate between two
-// different clocks:
-// 1. The Clock Wizard clock (+ dcm locked)
-// 2. The sys_clock which is regarded as always being locked
+`default_nettype none
 module clk_select (
-  clk_cpu,
-  locked,
-  clk_wiz_enable,
-  sys_clock,
-  
-  clk_wiz_clk,
-  clk_wiz_locked,
+  input  wire   pll_clk1,
+  input  wire   tio_clkin,
+  input  wire   j16_sel,
+  input  wire   pll_bypass,
+  output wire   sys_clock,
+  output wire   locked
 );
-  input clk_wiz_enable; // 0 = sys_clock, 1 = clk_wiz
-  input sys_clock;
-  input clk_wiz_clk;
-  input clk_wiz_locked; // Active High
 
-  output clk_cpu;
-  output locked; // locked is Active High
+wire mmcm_locked;
 
-  wire clk_wiz_enable;
-  wire sys_clock;
-  wire clk_wiz_clk;
-  wire clk_wiz_locked;
-
-  wire clk_cpu;
-  wire locked;
-
-  BUFGCTRL CCLK_MUX (
-       .O                       (clk_cpu),    // Clock output
+    // choose and buffer input clock based on J16 dip switch:
+`ifndef __ICARUS__
+    wire sys_clock_nopll;
+    wire sys_clock_pll;
+    /*
+    BUFGCTRL CCLK_MUX (
+       .O                       (sys_clock_nopll),    // Clock output
        .CE0                     (1'b1),         // Clock enable input for I0
        .CE1                     (1'b1),         // Clock enable input for I1
-       .I0                      (sys_clock),     // Primary clock
-       .I1                      (clk_wiz_clk),    // Secondary clock
+       .I0                      (pll_clk1),     // Primary clock
+       .I1                      (tio_clkin),    // Secondary clock
        .IGNORE0                 (1'b1),         // Clock ignore input for I0
        .IGNORE1                 (1'b1),         // Clock ignore input for I1
-       .S0                      (~clk_wiz_enable),     // Clock select for I0
-       .S1                      (clk_wiz_enable)       // Clock select for I1
-  );
+       .S0                      (~j16_sel),     // Clock select for I0
+       .S1                      (j16_sel)       // Clock select for I1
+    );
+    */
+    BUFGMUX #(
+        .CLK_SEL_TYPE("ASYNC")
+    ) U_clk_sel1 (
+        .O      (sys_clock_nopll),
+        .I0     (pll_clk1),
+        .I1     (tio_clkin),
+        .S      (j16_sel)
+    );
 
-  assign locked  = clk_wiz_enable ? clk_wiz_locked : 1'b1;
+
+    clk_wiz_0 clk_wiz_0 (
+        .clk_in1    (sys_clock_nopll),
+        .clk_out1   (sys_clock_pll),
+        .locked     (mmcm_locked)
+    );
+
+    BUFGMUX #(
+        .CLK_SEL_TYPE("ASYNC")
+    ) U_clk_sel2 (
+        .O      (sys_clock),
+        .I0     (sys_clock_nopll),
+        .I1     (sys_clock_pll),
+        .S      (pll_bypass)
+    );
+
+`else
+    assign sys_clock = j16_sel? tio_clkin : pll_clk1;
+`endif
+
+assign locked = pll_bypass? 1'b1 : mmcm_locked;
+
+
 endmodule
+`default_nettype wire
+
