@@ -1,12 +1,13 @@
 #! /usr/bin/python3
 
-from common import cw_connect, cw_set_params, ext_reset
+from common import cw_connect, cw_set_params, reset_arm_target, use_fpga_pll
 
 scope, ftarget = cw_connect()
 target, fpga_io = cw_set_params(scope, ftarget)
+use_fpga_pll(ftarget)
 
 def reset_flush():
-    ext_reset(fpga_io)
+    reset_arm_target(ftarget)
     target.flush()
 
 # Reset before using

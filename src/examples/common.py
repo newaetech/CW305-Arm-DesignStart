@@ -2,7 +2,6 @@ import chipwhisperer as cw
 from chipwhisperer.capture.targets.CW305 import CW305
 from time import sleep
 
-ext_reset_pin = "USBSPARE0"
 default_bitfile = r"V:/hardware/CW305_DesignStart/CW305_DesignStart.bit"
 
 def cw_connect(bitfile_path = default_bitfile, force = False):
@@ -99,12 +98,26 @@ def enable_clk_glitching(scope):
 def disable_clk_glitching(scope):
     scope.io.hs2 = "clkgen"
 
-def ext_reset(fpga_io):
-    fpga_io.pin_set_state(ext_reset_pin, 0)
-    sleep(0.1)
+# some convenience functions:
+def reset_fpga(ftarget):
+    # resets the full CW305 FPGA
+    ftarget.fpga_write(3, [1])
+    ftarget.fpga_write(3, [0])
 
-    fpga_io.pin_set_state(ext_reset_pin, 1)
-    sleep(0.1)
+def reset_arm_target(ftarget):
+    # resets only the Arm DesignStart core within the CW305 FPGA
+    ftarget.fpga_write(2, [1])
+    ftarget.fpga_write(2, [0])
+    
+def use_fpga_pll(ftarget):
+    # The target clock goes through a PLL (MMCM) in the FPGA before getting to the Arm DesignStart core.
+    # This PLL can clean up the clock and filter glitches.
+    ftarget.fpga_write(1, [1])
+
+def bypass_fpga_pll(ftarget):
+    # The target clock is connected directly to the Arm DesignStart core, bypassing the PLL.
+    # This can make clock glitching more effective.
+    ftarget.fpga_write(1, [0])
 
 # Useful for when instruction memory gets corrupted
 def reprogram_fpga(ftarget, bitfile_path = default_bitfile):

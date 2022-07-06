@@ -634,33 +634,6 @@ scope.io.hs2 = "clkgen"
 
 Here are some other notes when wanting to clock glitch the softcore.
 
-#### Programmatically using the reset
-
-You can now reset the softcore programmatically from your python script with
-
-```python
-from time import sleep
-
-# ... Initiate the scope, ftarget and target
-
-fpga_io = ftarget.gpio_mode()
-
-# Set ext_reset to its active high
-fpga_io.pin_set_state("USBSPARE0", 1)
-
-def reboot_flush():
-    fpga_io.pin_set_state("USBSPARE0", 0)
-    sleep(0.1)
-    fpga_io.pin_set_state("USBSPARE0", 1)
-    sleep(0.1)
-
-    # Flush garbage too
-    target.flush()
-
-# Remember to reset the softcore before using it
-reboot_flush()
-```
-
 #### Problem: corruption of instruction data
 
 Compared to the *ASIC*, it is relatively easy to corrupt the memory holding the
@@ -672,7 +645,7 @@ WARNING:ChipWhisperer Scope:Timeout in OpenADC capture(), no trigger seen! Trigg
 ```
 
 This will persist even if you restart your measurement. If you want to restart
-your measurment, you need to force the FPGA to reprogram adding the `force=True`
+your measurement, you need to force the FPGA to reprogram adding the `force=True`
 to your target instantiation.
 
 ```python
