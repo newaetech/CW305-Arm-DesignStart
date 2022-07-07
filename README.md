@@ -203,10 +203,6 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         - click OK  
         ![picture](images/axi_uartlite.png)
 
-    - File > Add Sources > Add or create design sources > Next;
-        - Add Files, select [`clk_select.v`](src/hardware/clk_select.v)
-        - select "Copy sources into project"; Finish
-
     - Double-click the `Clocks_and_Resets` block:
         - delete the `clk_wiz_0`, `proc_sys_reset_DAPLink`, `i_interconnect_aresetn`,
           `i_peripheral_aresetn1`, and `i_sysresetn_or` blocks
@@ -248,9 +244,6 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     - Repeat the above to create an output data pin named `M3_RESET_OUT`,
       connected to the `sysresetn` output of `Clocks_and_Resets`
 
-    - Repeat the above to create an **input** data pin named `clk_wiz_enable`,
-      connected to the `clk_wiz_enable` output of `Clocks_and_Resets`
-
     - Delete the `tri_io_buf_0` block
         - delete the dangling `TDO[0:0]` output port
         - for each of the following `Cortex_M3_0` outputs, right-click on
@@ -258,23 +251,6 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
             - `TDO`
             - `nTDOEN`
             - `SWV`
-
-    - Add create a new input port by clicking right click on the block diagram and
-      `Create Port`. This should be an `Input` port called `ext_reset` of type
-      `Reset` and Sensitivity equal to `Active High`.
-
-    - In the main block diagram, right click and click `Add IP`. Select Utility Vector Logic.
-        - Open this new component. Set `C_SIZE` equal to `1` and for `C_OPERATION`
-          select the option `and`.
-        - Name this component `Reset_AND`.
-        - Remove the connection between the `reset` input port and `sys_reset_n`.
-        - Add a connection from `reset` to the newly created `Reset_AND->Op1`
-          and from `ext_reset` to `Reset_AND->Op2`.
-        - Add a connection from `Reset_AND->Res` to `sys_reset_n`
-
-    - This should all look something like the following:
-
-![Setup External Reset](./images/ext_reset.png)
 
     - Add many more missing ports:
         - right-click on the `SWDITMS` input of the `Cortex_M3_0` block and
@@ -545,20 +521,6 @@ The following tutorials have been verified to succeed:
 - `PA_DPA_3-AES_DPA_Attack.ipynb`: succeeds with the CWLITEARM default
   settings
 
-## Resetting on start-up
-
-In contrast to the board with the dedicated ARM microcontroller, the software
-`main` function is not automatically started. This is because the FPGA has not
-received a reset signal. This could be the cause of the following error:
-
-```
-WARNING:ChipWhisperer Scope:Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid.
-```
-
-To actually start the software, it may be necessary to press the reset button.
-This is by default set to the `SW4` button, which is close to the `CLKIN` and
-`CLKOUT` lines on the CW305.
-
 ## CW305 switches
 
 The SW4 push-button is connected to the M3 reset; it can be used to reset
@@ -569,14 +531,11 @@ The J16 DIP-switch selects the M3 input clock:
 - 1: the input clock is the HS2 pin (e.g. clkgen from ChipWhisperer)
 The `Setup_DesignStart.ipynb` notebook expects J16 to be set to 0.
 
-The K16 DIP-switch enables the clock wizard:
-- 0: Use the raw input clock (useful for clock glitching)
-- 1: Use the clock from the clocking wizard
-
 Refer to the [CW305 documentation](https://www.newae.com/products/NAE-CW305)
 for more information on the features and capabilities of the CW305 board.
 
 ## Clock glitching
+
 The DesignStart reference design included a PLL to clean up the input clock;
 we removed this when we modified the `Clocks_and_Resets` block in Vivado,
 because it's been moved to the top-level `CW305_designstart_top.v` Verilog
@@ -591,6 +550,7 @@ defined in
 
 
 ## FPGA and target resets
+
 The pushbutton labeled "FPGA R1 USR SW4" (near the 3 side SMA connectors)
 resets the CW305 FPGA (including the Arm DesignStart core).
 
@@ -617,9 +577,9 @@ No need to recompile the FPGA bitfile from scratch.
 ## Additional information for clock glitching
 
 For clock glitching you probably do not want to use the clock wizard. Thus, the
-K16 switch should be set to 0. One thing to consider is that the softcore
-processor now directly utilizes the `sys_clock` instead of stabilizing the
-clock in the FPGA DCM. This clock is running at a 20MHz by default.
+PLL should be bypassed. One thing to consider is that the softcore processor now
+directly utilizes the `sys_clock` instead of stabilizing the clock in the FPGA
+DCM. This clock is running at a 20MHz by default.
 
 Furthermore, the glitched clock signal from the capture device is coming in on
 `hs2`. We can enable and disable glitching then with
@@ -644,15 +604,14 @@ after a while.
 WARNING:ChipWhisperer Scope:Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid.
 ```
 
-This will persist even if you restart your measurement. If you want to restart
-your measurement, you need to force the FPGA to reprogram adding the `force=True`
-to your target instantiation.
+This will persist even if you restart your measurement. If you want do normal
+measurements again, you need to reset the FPGA.
 
 ```python
 ftarget = cw.target(
 	scope, cw.targets.CW305,
 	bsfile='V:/hardware/CW305_DesignStart/CW305_DesignStart.bit',
-	fpga_id='100t',
+	fpga_id='100t', # or the other board
 	force=True
 )
 ```
@@ -688,9 +647,6 @@ provide some limited visibility into the target status:
   whenever there is UART traffic. Check your modifications to the
   `axi_uartlite_0` block. Inactivity can also be caused by mistakes in the
   bitfile update flow.
-
-If you are not receiving anything at all, [did you reset the
-processor?](#resetting-at-start-up).
 
 If you get clean FPGA and software builds but yet the target isn't
 responding, here is a list of possible causes:
