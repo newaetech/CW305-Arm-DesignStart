@@ -1,6 +1,5 @@
 import chipwhisperer as cw
 from chipwhisperer.capture.targets.CW305 import CW305
-from time import sleep
 
 default_bitfile = r"V:/hardware/CW305_DesignStart/CW305_DesignStart.bit"
 
@@ -8,52 +7,20 @@ def cw_connect(bitfile_path = default_bitfile, force = False):
     scope = cw.scope()
 
     ftarget = cw.target(
-        scope, cw.targets.CW305,
+        scope, CW305,
         bsfile=bitfile_path,
         fpga_id='100t', force=force
     )
 
     return (scope, ftarget)
 
-def cw_set_params(scope, ftarget, frequency = 20E6, samples = 20000, baud_rate = 7370000):
+def cw_set_params(scope, ftarget, frequency = 20E6):
     # Disable all the clocks on the FPGA
     ftarget.vccint_set(1.0)
 
-    ftarget.pll.pll_enable_set(False)
+    ftarget.pll.pll_enable_set(True)
     ftarget.pll.pll_outenable_set(False, 0)
     ftarget.pll.pll_outenable_set(True, 1)
-    ftarget.pll.pll_outenable_set(False, 2)
-
-    ftarget.pll.pll_outfreq_set(frequency, 1)
-
-    fpga_io = ftarget.gpio_mode()
-
-    scope.gain.gain = 60
-    scope.gain.mode = "high"
-    scope.adc.samples = samples
-    scope.adc.offset = 0
-    scope.adc.basic_mode = "rising_edge"
-    scope.clock.clkgen_freq = baud_rate
-    scope.clock.adc_src = "extclk_x4"
-
-    scope.io.tio1 = "serial_rx"
-    scope.io.tio2 = "serial_tx"
-    fpga_io.pin_set_state(ext_reset_pin, 1) # ext_reset is Active High
-    scope.trigger.triggers = "tio4"
-
-    scope.io.hs2 = "disabled"
-
-    target = cw.target(scope)
-
-    return (target, fpga_io)
-
-def cw_set_glitching_params(scope, ftarget, frequency = 20E6):
-    # Disable all the clocks on the FPGA
-    ftarget.vccint_set(1.0)
-
-    ftarget.pll.pll_enable_set(False)
-    ftarget.pll.pll_outenable_set(False, 0)
-    ftarget.pll.pll_outenable_set(False, 1)
     ftarget.pll.pll_outenable_set(False, 2)
 
     ftarget.pll.pll_outfreq_set(frequency, 1)
@@ -80,7 +47,6 @@ def cw_set_glitching_params(scope, ftarget, frequency = 20E6):
     scope.io.hs2 = "clkgen" # Clock glitching is disabled by default
     scope.io.tio1 = "serial_rx"
     scope.io.tio2 = "serial_tx"
-    fpga_io.pin_set_state(ext_reset_pin, 1) # ext_reset is Active High
     scope.trigger.triggers = "tio4"
 
     scope.io.glitch_lp = False

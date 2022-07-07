@@ -1,9 +1,9 @@
 #! /usr/bin/python3
 
-from common import cw_connect, cw_set_glitching_params, reset_arm_target, bypass_fpga_pll, enable_clk_glitching, disable_clk_glitching, reprogram_fpga
+from common import cw_connect, cw_set_params, reset_arm_target, bypass_fpga_pll, enable_clk_glitching, disable_clk_glitching, reprogram_fpga
 
 scope, ftarget = cw_connect()
-target, fpga_io = cw_set_glitching_params(scope, ftarget)
+target, fpga_io = cw_set_params(scope, ftarget)
 bypass_fpga_pll(ftarget)
 
 scope.glitch.width       = ...
