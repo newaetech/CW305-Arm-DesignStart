@@ -134,7 +134,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 
 2. Clone the DesignStart project in Vivado:
    - Open Vivado and open either the DesignStart project, found here:
-     `v:/hardware/m3_for_arty_a7/m3_for_arty_a7/*xpr`
+     `v:/hardware/m3_for_arty_a7/m3_for_arty_a7/m3_for_arty_a7.xpr`
    - There will be some warnings; this is ok.
    - File > Project > Save As, with a new project name of
      CW305\_DesignStart, to `V:/hardware/CW305_DesignStart` as shown below:  
@@ -143,9 +143,10 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 2. Copy `v:/software/m3_for_arty_a7/` to `v:/software/CW305_DesignStart`
 
 3. Follow the instructions in section 2.4 of the Arm DesignStart user guide,
-   but replace `m3_for_arty_a7` with `CW305_DesignStart`. Make sure `Arty A7-100`
-   is selected at `Tools -> Settings -> Project Settings -> General -> Project device` afterwards.
-   It will display a message to your upgrade IP blocks. Here you can upgrade using the default settings.
+   but replace `m3_for_arty_a7` with `CW305_DesignStart`.
+
+4. Make sure `Arty A7-100` is selected at `Tools -> Settings -> Project Settings
+   -> General -> Project device` afterwards.
 
 5. Do not follows steps 2.5 and 2.6:
     - Step 2.5 is not necessary because our CW305 port does not use QSPI
@@ -214,8 +215,12 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
           to the `peripheral_aresetn` output port
         - connect the `sysresetreq` input pin to the `mb_debug_sys_rst`
           input of `proc_sys_reset_base`
-        - connect the `xlconstant_8` output to the `aux_reset_in` input of
+        - connect the `xlconstant_1` output to the `aux_reset_in` input of
           `proc_sys_reset_base`
+		- right-click in the design window, select "Add Module" and select
+		  `clk_select.v`.
+		- Add a connection from `clk_select_0->sys_clock` to the `sys_clock`
+		  input pin.
         - right-click in the design window, select Create Pin, and create an
           input pin named "locked_i"; connect it to the `dcm_locked` input of
           `proc_sys_reset_base`
@@ -258,7 +263,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
             - type: clock
             - frequency (MHz): 20
 
-        - select `CM3_CODE_AXI3` port of `Cortex_M3_0 block`, then
+        - select `CM3_CODE_AXI3` port of `Cortex_M3_0` block, then
           right-click in the design window and select "Create Interface
           Port"; keep the pre-filled values and click OK  
         ![picture](images/CM3_CODE_AXI3.png)
@@ -314,9 +319,9 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     - upgrade IP blocks as required: next to the message "The design has 23
       blocks that should be upgraded.", click on "Report IP Status", then
       "upgrade selected"
-    - you will see three critical warnings related to the `clk_wiz` and
-      `proc_sys_reset_base` blocks
-        - open the `proc_sys_reset_base` block (inside the
+    - you will see three critical warnings related to the `proc_sys_reset_base`
+      blocks
+      - open the `proc_sys_reset_base` block (inside the
           `Clocks_and_Resets` block) and fix its configuration:
             - set Ext Reset Active Width to 1
             - set Aux Reset Active Width to 1
@@ -348,8 +353,8 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 10. Generate the FPGA PLL: this is needed because we've deleted the PLL from
     the `clocks_and_resets` block and moved it to the top-level Verilog.
     Under "Project Manager", click on "IP Catalog", search for "clock
-    wizard", and double-click on the "Clocking Wizard" search result. In the
-    "Clocking Options" tab, select the following options:
+	wizard", and double-click on the "Clocking Wizard" search result (Customize
+	IP). In the "Clocking Options" tab, select the following options:
      - MMCM
      - Frequency Synthesis
      - Phase Alignment
@@ -360,7 +365,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     In the "Output Clocks" tab, set the following:
      - clk_out1 requested frequency to 100 MHz
      - clocking feedback: Automatic Control On-Chip
-     - Enable Optional Inputs/Outputs: locked
+     - Enable Optional Inputs/Outputs: enable locked, disable reset
 
     Then click "OK", and "generate" (this can take a while).
 
@@ -516,22 +521,21 @@ The following tutorials have been verified to succeed:
 - `PA_DPA_3-AES_DPA_Attack.ipynb`: succeeds with the CWLITEARM default
   settings
 
-
 ## CW305 switches
+
 The SW4 push-button is connected to the M3 reset; it can be used to reset
 the running program.
 
 The J16 DIP-switch selects the M3 input clock:
 - 0: the input clock is the CW305 PLL1
 - 1: the input clock is the HS2 pin (e.g. clkgen from ChipWhisperer)
-
 The `Setup_DesignStart.ipynb` notebook expects J16 to be set to 0.
 
 Refer to the [CW305 documentation](https://www.newae.com/products/NAE-CW305)
 for more information on the features and capabilities of the CW305 board.
 
-
 ## Clock glitching
+
 The DesignStart reference design included a PLL to clean up the input clock;
 we removed this when we modified the `Clocks_and_Resets` block in Vivado,
 because it's been moved to the top-level `CW305_designstart_top.v` Verilog
@@ -546,6 +550,7 @@ defined in
 
 
 ## FPGA and target resets
+
 The pushbutton labeled "FPGA R1 USR SW4" (near the 3 side SMA connectors)
 resets the CW305 FPGA (including the Arm DesignStart core).
 
@@ -562,7 +567,6 @@ Resetting the Arm core is sometimes required after startup. If the target is
 unresponsive (e.g. captures time out with no trigger), try resetting the
 target.
 
-
 # Next steps
 
 ## Software modifications
@@ -570,6 +574,47 @@ Modifying the target software is easy. Make your changes and rebuild in Keil,
 then update the previous FPGA bitfile with the `make_prog_files.bat` script.
 No need to recompile the FPGA bitfile from scratch.
 
+## Additional information for clock glitching
+
+For clock glitching you probably do not want to use the clock wizard. Thus, the
+PLL should be bypassed. One thing to consider is that the softcore processor now
+directly utilizes the `sys_clock` instead of stabilizing the clock in the FPGA
+DCM. This clock is running at a 20MHz by default.
+
+Furthermore, the glitched clock signal from the capture device is coming in on
+`hs2`. We can enable and disable glitching then with
+
+```python
+# Enable glitching
+scope.io.hs2 = "glitch"
+
+# Disable glitching
+scope.io.hs2 = "clkgen"
+```
+
+Here are some other notes when wanting to clock glitch the softcore.
+
+#### Problem: corruption of instruction data
+
+Compared to the *ASIC*, it is relatively easy to corrupt the memory holding the
+code data. This will usually show itself as only receiving the following error
+after a while.
+
+```
+WARNING:ChipWhisperer Scope:Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid.
+```
+
+This will persist even if you restart your measurement. If you want do normal
+measurements again, you need to reset the FPGA.
+
+```python
+ftarget = cw.target(
+	scope, cw.targets.CW305,
+	bsfile='V:/hardware/CW305_DesignStart/CW305_DesignStart.bit',
+	fpga_id='100t', # or the other board
+	force=True
+)
+```
 
 ## Hardware modifications
 In this example, there is minimal FPGA logic alongside the Arm target. The
