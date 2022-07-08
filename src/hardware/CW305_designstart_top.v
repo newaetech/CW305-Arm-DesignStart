@@ -105,7 +105,7 @@ module CW305_designstart_top #(
   wire         reg_addrvalid;
 
   wire target_reset;
-  wire pll_bypass;
+  wire use_pll;
 
   `ifndef __ICARUS__
   m3_for_arty_a7 m3_for_arty_a7_i
@@ -176,7 +176,7 @@ module CW305_designstart_top #(
        .pll_clk1                (pll_clk1),
        .tio_clkin               (tio_clkin),
        .j16_sel                 (j16_sel),
-       .pll_bypass              (pll_bypass),
+       .use_pll                 (use_pll),
        .sys_clock               (sys_clock),
        .locked                  (locked)
    );
@@ -242,7 +242,7 @@ module CW305_designstart_top #(
       .reset_pin_n      (reset_pin_n),
       .fpga_reset       (fpga_reset),
       .target_reset     (target_reset),
-      .reg_pll_bypass   (pll_bypass),
+      .reg_use_pll      (use_pll),
 
       .usb_clk          (clk_usb_buf), 
       .reg_address      (reg_address[7:0]), 

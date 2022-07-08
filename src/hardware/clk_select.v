@@ -29,7 +29,7 @@ module clk_select (
   input  wire   pll_clk1,
   input  wire   tio_clkin,
   input  wire   j16_sel,
-  input  wire   pll_bypass,
+  input  wire   use_pll,
   output wire   sys_clock,
   output wire   locked
 );
@@ -75,14 +75,14 @@ wire mmcm_locked;
         .O      (sys_clock),
         .I0     (sys_clock_nopll),
         .I1     (sys_clock_pll),
-        .S      (pll_bypass)
+        .S      (use_pll)
     );
 
 `else
     assign sys_clock = j16_sel? tio_clkin : pll_clk1;
 `endif
 
-assign locked = pll_bypass? 1'b1 : mmcm_locked;
+assign locked = use_pll ? mmcm_locked : 1'b1;
 
 
 endmodule

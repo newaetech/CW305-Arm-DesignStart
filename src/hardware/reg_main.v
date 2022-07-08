@@ -30,7 +30,7 @@ module reg_main #(
    input  wire         reset_pin_n,
    output wire         fpga_reset,
    output wire         target_reset,
-   output reg          reg_pll_bypass,
+   output reg          reg_use_pll,
 
 // Interface to cw305_usb_reg_fe:
    input  wire                                  usb_clk,
@@ -67,7 +67,7 @@ module reg_main #(
       if (reg_read) begin
          case (reg_address)
             `REG_ECHO:                  reg_read_data = reg_echo[reg_bytecnt*8 +: 8];
-            `REG_PLL_BYPASS:            reg_read_data = reg_pll_bypass;
+            `REG_USE_PLL:               reg_read_data = reg_use_pll;
             default:                    reg_read_data = 0;
          endcase
       end
@@ -87,6 +87,7 @@ module reg_main #(
    always @(posedge usb_clk) begin
       if (fpga_reset) begin
           reg_target_reset <= 1'b0;
+          reg_use_pll <= 1'b1;
           reg_echo <= 32'b0;
       end
 
@@ -94,7 +95,7 @@ module reg_main #(
          if (reg_write) begin
             case (reg_address)
                `REG_ECHO:               reg_echo[reg_bytecnt*8 +: 8] <= write_data;
-               `REG_PLL_BYPASS:         reg_pll_bypass <= write_data[0];
+               `REG_USE_PLL:            reg_use_pll <= write_data[0];
                `REG_TARGET_RESET_REG:   reg_target_reset <= write_data[0];
             endcase
          end
