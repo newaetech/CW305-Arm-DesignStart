@@ -43,13 +43,14 @@ module CW305_designstart_top #(
   input  wire k15_sel,  // unused
 
   // CW305 USB:
+`ifndef SS2_WRAPPER
   input wire          USB_clk,
   inout wire [7:0]    USB_Data,
   input wire [pADDR_WIDTH-1:0] USB_Addr,
   input wire          USB_nRD,
   input wire          USB_nWE,
   input wire          USB_nCS,
-
+`endif
   output wire swv,
 
   output wire ext_clock,
@@ -198,6 +199,8 @@ module CW305_designstart_top #(
       assign SWOTDO  = swotdo;
   `endif
      
+
+`ifndef SS2_WRAPPER
   wire clk_usb_buf;
 
    `ifdef __ICARUS__
@@ -252,6 +255,13 @@ module CW305_designstart_top #(
       .reg_read         (reg_read), 
       .reg_write        (reg_write)
    );
+`else
+   assign fpga_reset = ~reset_pin_n;
+   assign target_reset = ~reset_pin_n;
+   assign use_pll = 1'b0;
+
+
+`endif// SS2_WRAPPER
 
 
 endmodule

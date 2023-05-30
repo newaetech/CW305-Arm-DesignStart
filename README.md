@@ -9,9 +9,10 @@ M1 or M3 on the popular [Digilent Arty
 A7](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start)
 FPGA platform.
 
-In this note we explain how to port the Arty DesignStart platform to our
-own [CW305](https://rtfm.newae.com/Targets/CW305%20Artix%20FPGA/) platform.
-We show how to generate the FPGA bitfile, then we show how to build our
+In this note we explain how to port the Arty DesignStart platform to our own
+[CW305](https://rtfm.newae.com/Targets/CW305%20Artix%20FPGA/) or CW312 A35
+platform.  We show how to generate the FPGA bitfile, then we show how to build
+our
 [standard simpleserial AES victim
 firmware](https://github.com/newaetech/chipwhisperer/tree/develop/hardware/victims/firmware/simpleserial-aes) and run our standard Jupyter tutorials.
 
@@ -21,7 +22,7 @@ own needs. Here are a few examples of what you can do:
 
 - add additional peripherals and interfaces to the Arm processor
 - instantiate multiple Arm processors
-- add additional side-channel attack logic to the CW305 FPGA -- for example,
+- add additional side-channel attack logic to the target FPGA -- for example,
   [Arm trace sniffing logic](https://github.com/newaetech/DesignStartTrace).
 
 Before starting, it's a good idea to watch the series of videos that Arm put
@@ -33,7 +34,7 @@ is like.
 
 
 ## Warning!
-Porting the Arm IP from the Arty platform to the CW305 platform requires you
+Porting the Arm IP from the Arty platform to one of our target FPGAs requires you
 to do a lot of work in Vivado. This write-up assumes some prior experience
 with Vivado.  It is not a Vivado tutorial! Vivado can be a fickle tool and
 its error messages will have you scratching your head if you aren't familiar
@@ -46,7 +47,7 @@ On the other hand, if you've used Vivado before, then don't let this scare
 you away. You probably won't be doing anything you haven't done before!
 For an experienced FPGA developer, there's nothing hard or tricky here. The
 intent of this note is to show that it *is* possible to run DesignStart on
-the CW305, and hopefully save you some time in getting there.
+our target FPGAs, and hopefully save you some time in getting there.
 
 
 ## Limitations
@@ -57,8 +58,8 @@ the CW305, and hopefully save you some time in getting there.
 
 # Requirements
 ## Hardware Requirements:
-- CW-Nano, Lite or Pro
-- CW305
+- CW-Nano, Lite, Pro or Husky
+- CW305 or CW312-A35
 
 ## Software Requirements:
 These are all free downloads:
@@ -111,7 +112,7 @@ https://www.keil.com/demo/eval/arm.htm.
 
 
 
-# Creating the CW305 FPGA bitfile
+# Creating the FPGA bitfile
 This is by far the longest step, so buckle in. 
 
 We're going to remove some unnecessary peripherals around the reference
@@ -126,6 +127,9 @@ parallel data interface provided by
 [CW305.py](https://github.com/newaetech/chipwhisperer/blob/develop/software/chipwhisperer/capture/targets/CW305.py),
 or make up an entirely new interface.)
 
+Since this guide was originally developed for the CW305 target, it contains
+many references to the CW305; unless otherwise noted, these also apply to the
+CW312 A35 target.
 
 1. Open the Arm DesignStart user guide
 (`<Arm bundle>/docs/arm_cortex_m3_designstart_fpga_xilinx...pdf`)
@@ -314,8 +318,9 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
         ![picture](images/success.png)
 
 7. Change the target from Arty to CW305:
-    - Settings > Device > Parts: choose the part on your CW305 board (either
-      `xc7a100tftg256-2` or `xc7a35tftg256-2`)
+    - Settings > Device > Parts: choose the correct part for your target
+        - for the CW305 this is either `xc7a100tftg256-2` or `xc7a35tftg256-2`
+        - for the CW312 A35 target this is `xc7a35tcsg324-1`
     - upgrade IP blocks as required: next to the message "The design has 23
       blocks that should be upgraded.", click on "Report IP Status", then
       "upgrade selected"
@@ -342,11 +347,13 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 
 9. Replace the constraint file:
     - File > Add Sources > Add or create constraints > Next;
-        - Add Files, select
+        - Add Files, select either
           [`CW305_designstart.xdc`](src/hardware/CW305_designstart.xdc)
+          or
+          [`a35_designstart.xdc`](src/hardware/a35_designstart.xdc)
         - ensure "Copy constraints files into project" is selected; Finish
     - in the Sources tree, expand Constraints and constrs\_1, right-click
-      `CW305_designstart.xdc`, select "Set as Target Constraint File"
+      the file you just added, select "Set as Target Constraint File"
     - remove the other two constraint files (`m3_for_arty_a7.xdc`,
       `m3_for_arty_a7_impl.xdc`) from the project
 
@@ -369,7 +376,11 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
 
     Then click "OK", and "generate" (this can take a while).
 
-11. Generate the FPGA bitstream: in the Flow Navigator pane, select "Generate
+11. If using the CW312 A35 target, go to `Tools -> Settings -> Project Settings
+   -> General -> Verilog options`, click on the three dots (`...`), and add a
+   define with a name of `SS2_WRAPPER` (no value needed).
+
+12. Generate the FPGA bitstream: in the Flow Navigator pane, select "Generate
     Bitstream". This will take on the order of 30 minutes. There should be
     no errors, but there will be warnings. In particular, timing will not be
     met: I haven't figured out how to change the target clock rate from 100
@@ -384,7 +395,7 @@ and follow the instructions in sections 2.1, 2.2, and 2.3.
     Vivado :-)*
 
 
-12. File > Export > Export Hardware, to `V:/software`
+13. File > Export > Export Hardware, to `V:/software`
 
 
 # Generate the BSP (Board Support Package)
@@ -511,9 +522,16 @@ on to [debugging](#debugging) below).
 Simply skip over the initial part of the tutorials which deals with
 programming the target. This means you do **not** use `STM32FProgrammer`. 
 Do not run the `%run
-"Helper_Scripts/Setup_Generic.ipynb"` cell; instead, use the
+"Helper_Scripts/Setup_Generic.ipynb"` cell; on the CW305, use the
 `Setup_DesignStart.ipynb` notebook supplied
 [here](src/jupyter/Setup_DesignStart.ipynb).
+
+On the CW312-A35, set up as follows:
+```Python
+scope.default_setup()
+target = cw.target(scope, cw.targets.SimpleSerial)
+scope.clock.clkgen_freq = 20e6
+```
 
 The following tutorials have been verified to succeed:
 - `PA_CPA_2-Manual_CPA_Attack.ipynb`: succeeds with a slightly higher number
@@ -534,7 +552,9 @@ The `Setup_DesignStart.ipynb` notebook expects J16 to be set to 0.
 Refer to the [CW305 documentation](https://www.newae.com/products/NAE-CW305)
 for more information on the features and capabilities of the CW305 board.
 
-## Clock glitching
+The CW312 A35 lacks these bells and whistles.
+
+## Clock glitching (CW305 only)
 
 The DesignStart reference design included a PLL to clean up the input clock;
 we removed this when we modified the `Clocks_and_Resets` block in Vivado,
@@ -548,8 +568,10 @@ default behaviour out of reset), call `use_fpga_pll()`.  These functions are
 defined in
 [`src/jupyter/Setup_DesignStart.ipynb`](src/jupyter/Setup_DesignStart.ipynb).
 
+On the CW312-A35, you'll have to customize and rebuild to get this
+functionality.
 
-## FPGA and target resets
+# FPGA and target resets (CW305 only)
 
 The pushbutton labeled "FPGA R1 USR SW4" (near the 3 side SMA connectors)
 resets the CW305 FPGA (including the Arm DesignStart core).
@@ -557,7 +579,7 @@ resets the CW305 FPGA (including the Arm DesignStart core).
 The FPGA can also be reset by calling `reset_fpga()` (defined in
 [`src/jupyter/Setup_DesignStart.ipynb`](src/jupyter/Setup_DesignStart.ipynb)).
 
-Finally, to reset only the Arm core, use `reset_arm_target()`. 
+Finally, to reset only the Arm core, use `reset_arm_target()`.
 
 Currently the only FPGA logic which is unaffected by the Arm core reset is
 the PLL bypass setting, but if you extend this work and add more FPGA logic,
@@ -648,6 +670,8 @@ provide some limited visibility into the target status:
   `axi_uartlite_0` block. Inactivity can also be caused by mistakes in the
   bitfile update flow.
 
+On the CW312-A35, these map to LED1/2/3 respectively on the CW313.
+
 If you get clean FPGA and software builds but yet the target isn't
 responding, here is a list of possible causes:
 - Did you [update the MMI file?](#update-mmi-file)
@@ -682,4 +706,7 @@ SWD signals which have been routed to the JP3 header (refer to the
 
 Debugging has been successfully tested using a Segger J-link Plus, using
 either the JTAG or SWD interface, with speed set to "auto".
+
+On the CW312-A35, set CW JTAG select switches 1-4 to "on" to connect the
+"FPGA Jaytag" header to the DesignStart soft-core JTAG.
 
