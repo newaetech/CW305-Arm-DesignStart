@@ -534,10 +534,21 @@ scope.clock.clkgen_freq = 20e6
 ```
 
 The following tutorials have been verified to succeed:
-- `PA_CPA_2-Manual_CPA_Attack.ipynb`: succeeds with a slightly higher number
-  of traces (150)
-- `PA_DPA_3-AES_DPA_Attack.ipynb`: succeeds with the CWLITEARM default
-  settings
+- [`Lab 3_3 - DPA on Firmware Implementation of AES`](https://github.com/newaetech/chipwhisperer-jupyter/blob/master/courses/sca101/Lab%203_3%20-%20DPA%20on%20Firmware%20Implementation%20of%20AES%20(MAIN).ipynb)
+- [`Lab 4_2 - CPA on Firmware Implememtation of AES`](https://github.com/newaetech/chipwhisperer-jupyter/blob/master/courses/sca101/Lab%204_2%20-%20CPA%20on%20Firmware%20Implementation%20of%20AES%20(MAIN).ipynb) (requires a slightly higher number of traces, around 150)
+
+Note that communication with the softcore is done over the UART interface,
+using the IO1 and IO2 lines of the 20-pin ChipWhisperer connector (i.e. just
+like with our "normal" microprocessor targets), **not** the CW305 USB
+interface. This means that the CW305 cannot be used in standalone mode; it
+needs to be connected to a [ChipWhisperer capture
+device](https://rtfm.newae.com/Capture/).
+
+Do not try to run the "normal" CW305 FPGA target notebooks (like
+[this one](https://github.com/newaetech/chipwhisperer-jupyter/blob/master/demos/PA_HW_CW305_1-Attacking_AES_on_an_FPGA.ipynb));
+these notebooks communicate with the target using the USB interface. That USB
+interface is not connected to the DesignStart softcore, and so these notebooks
+will not work with this DesignStart core.
 
 ## CW305 switches
 
